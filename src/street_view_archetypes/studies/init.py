@@ -16,14 +16,10 @@ from street_view_archetypes.config import load_pipeline_config
 from street_view_archetypes.pipeline import build_manifest
 from street_view_archetypes.utils.io import ensure_dir, write_csv
 
-TIGER_GENERALIZED_PLACES = (
-    "https://tigerweb.geo.census.gov/arcgis/rest/services/"
-    "Generalized_ACS2024/Places_CouSub_ConCity_SubMCD/MapServer"
-)
-TIGER_GENERALIZED_COUNTIES = (
-    "https://tigerweb.geo.census.gov/arcgis/rest/services/"
-    "Generalized_ACS2024/State_County/MapServer"
-)
+TIGER_PLACES = "https://tigerweb.geo.census.gov/arcgis/rest/services/TIGERweb/Places_CouSub_ConCity_SubMCD/MapServer"
+TIGER_COUNTIES = "https://tigerweb.geo.census.gov/arcgis/rest/services/TIGERweb/State_County/MapServer"
+PLACES_LAYER_ID = 4
+COUNTIES_LAYER_ID = 11
 
 STATE_FIPS = {
     "ALABAMA": "01", "AL": "01", "ALASKA": "02", "AK": "02", "ARIZONA": "04", "AZ": "04",
@@ -129,17 +125,16 @@ def init_study(
 
 def fetch_boundary_geojson(*, place_name: str, state_fips: str, boundary_type: str) -> dict[str, Any]:
     if boundary_type == "city":
-        service_url = TIGER_GENERALIZED_PLACES
-        desired_layer_fragment = "Incorporated Places"
+        service_url = TIGER_PLACES
+        layer_id = PLACES_LAYER_ID
         search_text = place_name
     elif boundary_type == "county":
-        service_url = TIGER_GENERALIZED_COUNTIES
-        desired_layer_fragment = "Counties"
+        service_url = TIGER_COUNTIES
+        layer_id = COUNTIES_LAYER_ID
         search_text = re.sub(r"\s+County$", "", place_name, flags=re.IGNORECASE)
     else:
         raise ValueError("init-study currently supports boundary_type 'city' and 'county'.")
 
-    layer_id = _find_layer_id(service_url, desired_layer_fragment)
     match = _find_feature(service_url, layer_id, search_text, state_fips)
     geojson = _query_feature_geojson(service_url, layer_id, match["attributes"])
 
@@ -253,26 +248,21 @@ def _build_local_config_payload(
     }
 
 
-def _find_layer_id(service_url: str, desired_layer_fragment: str) -> int:
-    metadata = _fetch_json(f"{service_url}?f=pjson")
-    for layer in metadata.get("layers", []):
-        if desired_layer_fragment.lower() in str(layer.get("name", "")).lower():
-            return int(layer["id"])
-    raise ValueError(f"Could not find TIGERweb layer containing '{desired_layer_fragment}'.")
-
-
 def _find_feature(service_url: str, layer_id: int, search_text: str, state_fips: str) -> dict[str, Any]:
+    where = _build_search_where(layer_id, search_text, state_fips)
     params = urllib.parse.urlencode(
         {
-            "searchText": search_text,
-            "searchFields": "NAME",
-            "layers": str(layer_id),
+            "where": where,
+            "outFields": "*",
             "returnGeometry": "false",
             "f": "pjson",
         }
     )
-    payload = _fetch_json(f"{service_url}/find?{params}")
-    candidates = payload.get("results", [])
+    payload = _fetch_json(f"{service_url}/{layer_id}/query?{params}")
+    candidates = [
+        {"attributes": feature.get("attributes", {})}
+        for feature in payload.get("features", [])
+    ]
     filtered = [
         result
         for result in candidates
@@ -284,6 +274,16 @@ def _find_feature(service_url: str, layer_id: int, search_text: str, state_fips:
     if not filtered:
         raise ValueError(f"No boundary match found for '{search_text}' in state {state_fips}.")
     return filtered[0]
+
+
+def _build_search_where(layer_id: int, search_text: str, state_fips: str) -> str:
+    escaped_search = _escape_sql(search_text)
+    escaped_state = _escape_sql(state_fips)
+    if layer_id == PLACES_LAYER_ID:
+        return f"BASENAME = '{escaped_search}' AND STATE = '{escaped_state}'"
+    if layer_id == COUNTIES_LAYER_ID:
+        return f"BASENAME = '{escaped_search}' AND STATE = '{escaped_state}'"
+    raise ValueError(f"Unsupported layer id for search: {layer_id}")
 
 
 def _query_feature_geojson(service_url: str, layer_id: int, attributes: dict[str, Any]) -> dict[str, Any]:
