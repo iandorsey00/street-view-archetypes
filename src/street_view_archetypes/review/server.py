@@ -44,9 +44,11 @@ class ReviewStore:
         self.categories = categories
         self._lock = threading.Lock()
         self._df = pd.read_csv(manifest_path).fillna("")
-        for column in ("reviewed_categories", "review_notes", "source_labels", "image_path"):
+        for column in ("reviewed_categories", "review_notes", "source_labels", "image_path", "review_status"):
             if column not in self._df.columns:
                 self._df[column] = ""
+        self._df["reviewed_categories"] = self._df["reviewed_categories"].apply(_normalize_reviewed_categories_value)
+        self._df["review_status"] = self._df.apply(_normalize_review_status_row, axis=1)
 
     def records(self) -> list[dict[str, Any]]:
         with self._lock:
@@ -61,6 +63,7 @@ class ReviewStore:
                         "image_path": row.get("image_path", ""),
                         "source_labels": row.get("source_labels", ""),
                         "reviewed_categories": _split_pipe(row.get("reviewed_categories", "")),
+                        "review_status": row.get("review_status", "unreviewed"),
                         "review_notes": row.get("review_notes", ""),
                     }
                 )
@@ -68,7 +71,7 @@ class ReviewStore:
 
     def summary(self) -> dict[str, Any]:
         with self._lock:
-            reviewed = self._df["reviewed_categories"].astype(str).str.strip() != ""
+            reviewed = self._df["review_status"].astype(str).str.strip().str.lower() == "reviewed"
             with_images = self._df["image_path"].astype(str).str.strip() != ""
             return {
                 "row_count": int(len(self._df)),
@@ -84,6 +87,7 @@ class ReviewStore:
             if index < 0 or index >= len(self._df):
                 raise IndexError("Record index out of range.")
             self._df.at[index, "reviewed_categories"] = "|".join(normalized_categories)
+            self._df.at[index, "review_status"] = "reviewed"
             self._df.at[index, "review_notes"] = review_notes
             self._df.to_csv(self.manifest_path, index=False)
             return {
@@ -167,6 +171,21 @@ class ReviewHandler(BaseHTTPRequestHandler):
 
 def _split_pipe(value: str) -> list[str]:
     return [token.strip() for token in str(value).split("|") if token.strip()]
+
+
+def _normalize_reviewed_categories_value(value: object) -> str:
+    normalized = str(value).strip()
+    if normalized in {"", "[]", "[ ]", "null", "None"}:
+        return ""
+    return normalized
+
+
+def _normalize_review_status_row(row: pd.Series) -> str:
+    status = str(row.get("review_status", "")).strip().lower()
+    if status in {"reviewed", "unreviewed"}:
+        return status
+    categories = _normalize_reviewed_categories_value(row.get("reviewed_categories", ""))
+    return "reviewed" if categories else "unreviewed"
 
 
 INDEX_HTML = """

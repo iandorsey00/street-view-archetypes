@@ -216,6 +216,7 @@ python -m street_view_archetypes.cli review-manifest \
 ```
 
 Then open [http://127.0.0.1:8765](http://127.0.0.1:8765) in your browser. Labels are saved directly back into the manifest CSV.
+The reviewer now tracks an explicit `review_status` field so saved progress remains reliable even if older manifests contain placeholder values.
 
 5. Validate the reviewed manifest:
 
