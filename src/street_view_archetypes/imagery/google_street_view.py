@@ -21,6 +21,8 @@ def build_reference_manifest(sample_records: list[dict], imagery_config: Imagery
             "reference_url": _build_street_view_reference_url(record, imagery_config),
             "image_path": None,
             "source_labels": [],
+            "reviewed_categories": [],
+            "review_notes": "",
         }
         manifest.append(reference)
     return manifest
@@ -34,6 +36,9 @@ def merge_local_manifest(reference_manifest: list[dict], local_manifest_path: Pa
     merged = manifest_df.merge(local_df, on="sample_id", how="left", suffixes=("", "_local"))
     merged["image_path"] = merged.get("image_path_local", merged.get("image_path"))
     merged["source_labels"] = merged.apply(_normalize_labels, axis=1)
+    merged["reviewed_categories"] = merged.apply(_normalize_reviewed_categories, axis=1)
+    if "review_notes_local" in merged.columns:
+        merged["review_notes"] = merged["review_notes_local"].fillna("")
     drop_columns = [column for column in merged.columns if column.endswith("_local")]
     return merged.drop(columns=drop_columns).to_dict(orient="records")
 
@@ -51,6 +56,15 @@ def _build_street_view_reference_url(record: dict, imagery_config: ImageryConfig
 
 def _normalize_labels(row: pd.Series) -> list[str]:
     raw = row.get("source_labels")
+    if isinstance(raw, list):
+        return [str(item).strip() for item in raw if str(item).strip()]
+    if isinstance(raw, str):
+        return [token.strip() for token in raw.split("|") if token.strip()]
+    return []
+
+
+def _normalize_reviewed_categories(row: pd.Series) -> list[str]:
+    raw = row.get("reviewed_categories_local", row.get("reviewed_categories"))
     if isinstance(raw, list):
         return [str(item).strip() for item in raw if str(item).strip()]
     if isinstance(raw, str):

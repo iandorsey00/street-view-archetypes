@@ -148,6 +148,28 @@ python -m street_view_archetypes.cli run configs/pipeline.example.yaml
 
 4. Review outputs in `outputs/`.
 
+## Recommended Research Workflow
+
+For real study areas, keep the repository generic and run study-specific work through local configs and manifests.
+
+1. Create an uncommitted config in `configs/local/` for your chosen boundary.
+2. Generate a review manifest:
+
+```bash
+python -m street_view_archetypes.cli prepare-manifest \
+  configs/local/your-run.yaml \
+  outputs/your-run/review_manifest.csv
+```
+
+3. Populate the manifest with compliant local imagery paths and review fields:
+
+- `image_path`
+- `source_labels`
+- `reviewed_categories`
+- `review_notes`
+
+4. Point `imagery.local_manifest_path` at that reviewed manifest and run the pipeline in `local_images` mode.
+
 The MVP can run in two modes:
 
 - `references_only`: create sample/reference manifests and summary shells

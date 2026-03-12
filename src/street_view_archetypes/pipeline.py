@@ -13,14 +13,18 @@ from street_view_archetypes.sampling.grid import expand_headings, sample_points
 from street_view_archetypes.summarization.archetypes import summarize_categories
 
 
+def build_manifest(config: PipelineConfig) -> list[dict]:
+    boundary_gdf = load_boundary(config.boundary)
+    sampled_points = sample_points(boundary_gdf, config.sampling)
+    sample_records = expand_headings(sampled_points, config.sampling.heading_mode)
+    return build_reference_manifest(sample_records, config.imagery)
+
+
 def run_pipeline(config: PipelineConfig) -> RunArtifacts:
     boundary_gdf = load_boundary(config.boundary)
     boundary_summary = summarize_boundary(boundary_gdf)
 
-    sampled_points = sample_points(boundary_gdf, config.sampling)
-    sample_records = expand_headings(sampled_points, config.sampling.heading_mode)
-
-    manifest = build_reference_manifest(sample_records, config.imagery)
+    manifest = build_manifest(config)
     if config.imagery.mode == "local_images":
         if config.imagery.local_manifest_path is None:
             raise ValueError("local_manifest_path is required when imagery.mode='local_images'.")
