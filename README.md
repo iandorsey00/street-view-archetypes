@@ -153,6 +153,7 @@ python -m street_view_archetypes.cli run configs/pipeline.example.yaml
 For real study areas, keep the repository generic and run study-specific work through local configs and manifests.
 
 1. Create an uncommitted config in `configs/local/` for your chosen boundary.
+   Start from [configs/templates/local-run.template.yaml](/Users/iandorsey/dev/street-view-archetypes/configs/templates/local-run.template.yaml).
 2. Generate a review manifest:
 
 ```bash
@@ -168,7 +169,16 @@ python -m street_view_archetypes.cli prepare-manifest \
 - `reviewed_categories`
 - `review_notes`
 
-4. Point `imagery.local_manifest_path` at that reviewed manifest and run the pipeline in `local_images` mode.
+You can start from [data/examples/review_manifest.template.csv](/Users/iandorsey/dev/street-view-archetypes/data/examples/review_manifest.template.csv).
+
+4. Validate the reviewed manifest:
+
+```bash
+python -m street_view_archetypes.cli validate-manifest \
+  data/local/manifests/your-reviewed-manifest.csv
+```
+
+5. Point `imagery.local_manifest_path` at that reviewed manifest and run the pipeline in `local_images` mode.
 
 The local-image workflow now produces:
 
@@ -196,6 +206,7 @@ To keep the repository place-neutral:
 
 - commit only generic example configs and toy boundaries
 - put real study-area configs in `configs/local/`
+- put real study-area boundary files and manifests in `data/local/`
 - treat generated outputs as uncommitted run artifacts
 
 See:

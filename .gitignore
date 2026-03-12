@@ -208,5 +208,6 @@ __marimo__/
 
 # Project-local study configs and generated run artifacts
 configs/local/
+data/local/
 outputs/*
 !outputs/.gitkeep

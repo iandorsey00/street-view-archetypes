@@ -1,0 +1,3 @@
+sample_id,latitude,longitude,heading,stratum,provider,mode,image_width,image_height,field_of_view,pitch,reference_url,image_path,source_labels,reviewed_categories,review_notes
+pt-0001,0.0,0.0,0,NE,google_street_view,local_images,640,640,90,0,https://example.com/reference-1,/absolute/path/to/image1.jpg,housing|residential,housing_units,Confirmed detached or multifamily housing view
+pt-0001,0.0,0.0,90,NE,google_street_view,local_images,640,640,90,0,https://example.com/reference-2,/absolute/path/to/image2.jpg,arterial|roadway,,"Not a housing view"
