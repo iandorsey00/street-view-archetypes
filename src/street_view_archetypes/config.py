@@ -46,8 +46,12 @@ class ClassificationConfig(BaseModel):
 
 
 class AnalysisConfig(BaseModel):
-    summary_method: Literal["descriptor_centroid"] = "descriptor_centroid"
+    summary_method: Literal["descriptor_centroid", "feature_centroid"] = "feature_centroid"
     comparison_mode: Literal["within_run", "cross_run"] = "within_run"
+    feature_extractor: Literal["pooled_descriptor_v1"] = "pooled_descriptor_v1"
+    representative_selection: Literal["centroid_nearest"] = "centroid_nearest"
+    generate_composite: bool = False
+    composite_size: int = Field(default=256, gt=31, le=1024)
 
 
 class ReportingConfig(BaseModel):

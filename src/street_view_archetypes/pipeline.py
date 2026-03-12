@@ -36,7 +36,12 @@ def run_pipeline(config: PipelineConfig) -> RunArtifacts:
         categories=categories,
         targets=config.classification.target_categories,
     )
-    category_summaries = summarize_categories(classified, config.classification.target_categories)
+    category_summaries = summarize_categories(
+        classified,
+        target_categories=config.classification.target_categories,
+        analysis_config=config.analysis,
+        output_dir=config.run.output_dir,
+    )
 
     artifacts = RunArtifacts(
         boundary_summary=boundary_summary,

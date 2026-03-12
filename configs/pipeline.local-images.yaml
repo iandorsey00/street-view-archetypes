@@ -34,8 +34,12 @@ classification:
     - "shopping_centers"
 
 analysis:
-  summary_method: "descriptor_centroid"
+  summary_method: "feature_centroid"
   comparison_mode: "within_run"
+  feature_extractor: "pooled_descriptor_v1"
+  representative_selection: "centroid_nearest"
+  generate_composite: true
+  composite_size: 256
 
 reporting:
   write_markdown: true

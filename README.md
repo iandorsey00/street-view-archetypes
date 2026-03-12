@@ -98,9 +98,9 @@ The workflow distinguishes three different concepts:
 The detailed tradeoffs are documented in [docs/methodology.md](/Users/iandorsey/dev/street-view-archetypes/docs/methodology.md), but the MVP defaults to:
 
 - Category-specific summaries, not all-image summaries
-- Descriptor/embedding centroids rather than literal pixel averaging
+- Multi-part feature centroids rather than literal pixel averaging
 - Representative image selection as the main visual output
-- Optional simple aggregate descriptor summaries such as color and texture distributions
+- Optional illustrative composite images, clearly caveated
 
 This is more defensible than a raw pixel composite, which can easily produce uninterpretable blur.
 
@@ -170,6 +170,13 @@ python -m street_view_archetypes.cli prepare-manifest \
 
 4. Point `imagery.local_manifest_path` at that reviewed manifest and run the pipeline in `local_images` mode.
 
+The local-image workflow now produces:
+
+- a category-specific feature centroid
+- a centroid-nearest representative image
+- within-category dispersion statistics
+- an optional illustrative composite image
+
 The MVP can run in two modes:
 
 - `references_only`: create sample/reference manifests and summary shells
@@ -201,7 +208,7 @@ See:
 
 - The MVP includes a rule-based category filter instead of a trained computer-vision model.
 - The demo boundaries are toy examples for reproducibility, not analytical geographies.
-- “Archetype” currently means centroid-nearest sampled image from available descriptors.
+- “Archetype” currently means the centroid-nearest sampled image under a handcrafted pooled feature representation.
 - True Street View collection is provider-dependent and intentionally conservative here because of compliance constraints.
 - Sampling can reduce bias, but it cannot eliminate coverage, visibility, and temporal biases inherent in Street View data.
 

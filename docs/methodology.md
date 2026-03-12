@@ -95,11 +95,34 @@ Use a layered output strategy:
 
 1. Category-specific sample manifest
 2. Summary statistics for sampling and classification
-3. Descriptor or embedding centroid
+3. Feature or embedding centroid
 4. Representative centroid-nearest image
 5. Optional low-level aggregate descriptors
 
 This combination is more defensible than publishing a single literal “average image.”
+
+## Current MVP Implementation
+
+The current codebase uses a handcrafted feature representation called `pooled_descriptor_v1`.
+
+It combines:
+
+- spatially pooled RGB values
+- channel-level color histograms
+- grayscale brightness summaries
+- simple edge-strength structure summaries
+
+This is stronger than a single global mean color vector because it preserves some coarse layout and structural information, but it is still not a learned semantic embedding. It should be treated as an interpretable intermediate method, not the final state of the research design.
+
+The current primary visual output is:
+
+- the centroid-nearest real image for the category-specific sample subset
+
+The current optional secondary visual output is:
+
+- an equal-weight pixel composite resized to a common frame
+
+That composite should be labeled illustrative only.
 
 ## Bias and Threats to Validity
 

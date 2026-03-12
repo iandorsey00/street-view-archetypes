@@ -46,7 +46,10 @@ def _render_markdown_report(config: PipelineConfig, artifacts: RunArtifacts) -> 
                 f"### {category}",
                 f"- Classified references: {summary['reference_count']}",
                 f"- Representative image path: {summary['representative_image_path']}",
-                f"- Descriptor centroid available: {'yes' if summary['descriptor_centroid'] else 'no'}",
+                f"- Feature centroid available: {'yes' if summary['feature_centroid'] else 'no'}",
+                f"- Feature dimension: {summary['feature_dimension']}",
+                f"- Within-category dispersion: {summary['within_category_dispersion']}",
+                f"- Composite image path: {summary['composite_image_path']}",
             ]
         )
         if summary["notes"]:
