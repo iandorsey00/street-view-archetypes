@@ -63,6 +63,9 @@ street-view-archetypes/
 │       ├── reporting/
 │       │   ├── __init__.py
 │       │   └── writer.py
+│       ├── review/
+│       │   ├── __init__.py
+│       │   └── server.py
 │       ├── sampling/
 │       │   ├── __init__.py
 │       │   └── grid.py
@@ -204,6 +207,15 @@ This requires a Google API key passed through `--google-api-key` or `GOOGLE_MAPS
 - `review_notes`
 
 You can start from [data/examples/review_manifest.template.csv](/Users/iandorsey/dev/street-view-archetypes/data/examples/review_manifest.template.csv).
+
+Instead of editing the CSV manually, you can start the local review helper:
+
+```bash
+python -m street_view_archetypes.cli review-manifest \
+  /Users/iandorsey/dev/street-view-archetypes/configs/local/mission-viejo-city-housing-units.yaml
+```
+
+Then open [http://127.0.0.1:8765](http://127.0.0.1:8765) in your browser. Labels are saved directly back into the manifest CSV.
 
 5. Validate the reviewed manifest:
 

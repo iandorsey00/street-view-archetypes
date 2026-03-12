@@ -9,6 +9,7 @@ import pandas as pd
 
 from street_view_archetypes.config import load_pipeline_config
 from street_view_archetypes.pipeline import build_manifest, run_pipeline
+from street_view_archetypes.review.server import run_review_server
 from street_view_archetypes.studies.init import init_study
 from street_view_archetypes.utils.io import ensure_dir, write_csv
 
@@ -45,6 +46,14 @@ def build_parser() -> argparse.ArgumentParser:
     init_study_parser.add_argument("--spacing-meters", type=int, default=400)
     init_study_parser.add_argument("--min-points", type=int, default=24)
     init_study_parser.add_argument("--max-points", type=int, default=120)
+
+    review_manifest = subparsers.add_parser(
+        "review-manifest",
+        help="Start a local review server for the manifest referenced by a config",
+    )
+    review_manifest.add_argument("config_path")
+    review_manifest.add_argument("--host", default="127.0.0.1")
+    review_manifest.add_argument("--port", type=int, default=8765)
 
     run = subparsers.add_parser("run", help="Run the MVP pipeline")
     run.add_argument("config_path")
@@ -99,6 +108,10 @@ def main() -> None:
         except KeyboardInterrupt:
             print("Study initialization interrupted. Partial local files may have been created.", file=sys.stderr)
             raise SystemExit(130)
+        return
+
+    if args.command == "review-manifest":
+        run_review_server(args.config_path, host=args.host, port=args.port)
         return
 
     if args.command == "run":
