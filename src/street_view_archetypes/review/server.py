@@ -51,9 +51,10 @@ class ReviewStore:
     def records(self) -> list[dict[str, Any]]:
         with self._lock:
             records: list[dict[str, Any]] = []
-            for row in self._df.to_dict(orient="records"):
+            for index, row in enumerate(self._df.to_dict(orient="records")):
                 records.append(
                     {
+                        "index": index,
                         "sample_id": row.get("sample_id", ""),
                         "heading": row.get("heading", ""),
                         "stratum": row.get("stratum", ""),
@@ -300,6 +301,12 @@ INDEX_HTML = """
       color: var(--accent);
       min-height: 20px;
     }
+    .error {
+      color: #b42318;
+      font-weight: 600;
+      margin-top: 12px;
+      white-space: pre-wrap;
+    }
     @media (max-width: 920px) {
       .shell { grid-template-columns: 1fr; }
     }
@@ -335,6 +342,7 @@ INDEX_HTML = """
           <button class="secondary" id="next-unreviewed-button">Next Unreviewed</button>
         </div>
         <div class="status" id="status"></div>
+        <div class="error" id="error"></div>
       </div>
     </aside>
   </div>
@@ -342,18 +350,35 @@ INDEX_HTML = """
     let state = { records: [], summary: {}, index: 0 };
 
     async function loadManifest() {
-      const response = await fetch('/api/manifest');
-      state = await response.json();
-      render();
+      try {
+        const response = await fetch('/api/manifest');
+        if (!response.ok) {
+          throw new Error(`Manifest request failed: ${response.status}`);
+        }
+        state = await response.json();
+        if (!state.records || !state.records.length) {
+          throw new Error('Manifest loaded but contains no records.');
+        }
+        clearError();
+        render();
+      } catch (error) {
+        showError(error.message || String(error));
+      }
     }
 
     function render() {
       const record = state.records[state.index];
-      if (!record) return;
+      if (!record) {
+        showError('No review record is available at the current index.');
+        return;
+      }
 
       document.getElementById('title').textContent = `${record.sample_id} • heading ${record.heading}`;
       document.getElementById('record-label').textContent = `Record ${state.index + 1} of ${state.records.length}`;
-      document.getElementById('review-image').src = `/image?path=${encodeURIComponent(record.image_path)}`;
+      const image = document.getElementById('review-image');
+      image.src = `/image?path=${encodeURIComponent(record.image_path || '')}`;
+      image.onerror = () => showError(`Could not load image:\\n${record.image_path || '(blank path)'}`);
+      image.onload = () => clearError();
       document.getElementById('image-path').textContent = record.image_path || 'No image path';
       document.getElementById('source-labels').textContent = `Source labels: ${record.source_labels || 'none'}`;
       document.getElementById('review-notes').value = record.review_notes || '';
@@ -377,20 +402,28 @@ INDEX_HTML = """
     }
 
     async function saveCurrent() {
-      const inputs = Array.from(document.querySelectorAll('#category-chips input:checked'));
-      const reviewed_categories = inputs.map((input) => input.value);
-      const review_notes = document.getElementById('review-notes').value;
-      const response = await fetch('/api/save', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ index: state.index, reviewed_categories, review_notes })
-      });
-      const payload = await response.json();
-      state.records[state.index].reviewed_categories = reviewed_categories;
-      state.records[state.index].review_notes = review_notes;
-      state.summary = payload.summary;
-      document.getElementById('status').textContent = 'Saved';
-      render();
+      try {
+        const inputs = Array.from(document.querySelectorAll('#category-chips input:checked'));
+        const reviewed_categories = inputs.map((input) => input.value);
+        const review_notes = document.getElementById('review-notes').value;
+        const response = await fetch('/api/save', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ index: state.index, reviewed_categories, review_notes })
+        });
+        if (!response.ok) {
+          throw new Error(`Save failed: ${response.status}`);
+        }
+        const payload = await response.json();
+        state.records[state.index].reviewed_categories = reviewed_categories;
+        state.records[state.index].review_notes = review_notes;
+        state.summary = payload.summary;
+        document.getElementById('status').textContent = 'Saved';
+        clearError();
+        render();
+      } catch (error) {
+        showError(error.message || String(error));
+      }
     }
 
     function step(delta) {
@@ -403,11 +436,20 @@ INDEX_HTML = """
       for (let i = state.index + 1; i < state.records.length; i += 1) {
         if (!(state.records[i].reviewed_categories || []).length) {
           state.index = i;
+          clearError();
           render();
           return;
         }
       }
       document.getElementById('status').textContent = 'No later unreviewed records';
+    }
+
+    function showError(message) {
+      document.getElementById('error').textContent = message;
+    }
+
+    function clearError() {
+      document.getElementById('error').textContent = '';
     }
 
     document.getElementById('prev-button').addEventListener('click', () => step(-1));
