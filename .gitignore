@@ -209,5 +209,6 @@ __marimo__/
 # Project-local study configs and generated run artifacts
 configs/local/
 data/local/
+HANDOFF.local.md
 outputs/*
 !outputs/.gitkeep
