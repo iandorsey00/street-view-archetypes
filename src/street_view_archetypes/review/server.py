@@ -301,6 +301,19 @@ INDEX_HTML = """
       color: var(--accent);
       min-height: 20px;
     }
+    .rubric {
+      margin: 16px 0 18px;
+      padding: 14px 16px;
+      border-radius: 14px;
+      background: var(--accent-soft);
+      border: 1px solid #b9ddd6;
+      font-size: 14px;
+      line-height: 1.45;
+    }
+    .rubric strong {
+      display: block;
+      margin-bottom: 6px;
+    }
     .error {
       color: #b42318;
       font-weight: 600;
@@ -333,6 +346,10 @@ INDEX_HTML = """
       <div class="controls">
         <div class="eyebrow">Labeling</div>
         <h1 id="record-label">Record</h1>
+        <div class="rubric">
+          <strong>Housing units rubric</strong>
+          Label <code>housing_units</code> when the image is primarily a residential scene and the housing form is visually legible. Multiple houses are fine. Do not label it when housing is only incidental, distant, obscured, or when the scene is mainly roadway, parking, open space, walls, or commercial frontage.
+        </div>
         <div class="chips" id="category-chips"></div>
         <textarea id="review-notes" placeholder="Optional review notes"></textarea>
         <div class="button-row">
