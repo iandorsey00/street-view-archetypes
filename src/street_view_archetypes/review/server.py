@@ -374,7 +374,8 @@ INDEX_HTML = """
         <div class="button-row">
           <button class="secondary" id="prev-button">Previous</button>
           <button class="secondary" id="next-button">Next</button>
-          <button id="save-button">Save</button>
+          <button id="save-next-button">Save &amp; Next</button>
+          <button class="secondary" id="save-button">Save Only</button>
           <button class="secondary" id="next-unreviewed-button">Next Unreviewed</button>
         </div>
         <div class="status" id="status"></div>
@@ -445,7 +446,7 @@ INDEX_HTML = """
       }
     }
 
-    async function saveCurrent() {
+    async function saveCurrent(options = { advance: false }) {
       try {
         const inputs = Array.from(document.querySelectorAll('#category-chips input:checked'));
         const reviewed_categories = inputs.map((input) => input.value);
@@ -461,9 +462,13 @@ INDEX_HTML = """
         const payload = await response.json();
         state.records[state.index].reviewed_categories = reviewed_categories;
         state.records[state.index].review_notes = review_notes;
+        state.records[state.index].review_status = 'reviewed';
         state.summary = payload.summary;
-        document.getElementById('status').textContent = 'Saved';
+        document.getElementById('status').textContent = options.advance ? 'Saved and moved to next record' : 'Saved';
         clearError();
+        if (options.advance && state.index < state.records.length - 1) {
+          state.index += 1;
+        }
         render();
       } catch (error) {
         showError(error.message || String(error));
@@ -498,7 +503,8 @@ INDEX_HTML = """
 
     document.getElementById('prev-button').addEventListener('click', () => step(-1));
     document.getElementById('next-button').addEventListener('click', () => step(1));
-    document.getElementById('save-button').addEventListener('click', saveCurrent);
+    document.getElementById('save-button').addEventListener('click', () => saveCurrent({ advance: false }));
+    document.getElementById('save-next-button').addEventListener('click', () => saveCurrent({ advance: true }));
     document.getElementById('next-unreviewed-button').addEventListener('click', nextUnreviewed);
     loadManifest();
   </script>
