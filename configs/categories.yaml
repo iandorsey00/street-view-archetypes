@@ -1,0 +1,36 @@
+categories:
+  housing_units:
+    label: "Housing units"
+    include_any:
+      - housing
+      - residential
+      - detached_house
+      - apartment
+      - townhouse
+      - multifamily
+    exclude_any:
+      - retail
+      - highway
+      - industrial
+  arterial_roadways:
+    label: "Arterial roadways"
+    include_any:
+      - arterial
+      - roadway
+      - multi_lane
+      - boulevard
+      - thoroughfare
+    exclude_any:
+      - residential_only
+      - local_street
+  shopping_centers:
+    label: "Shopping centers / retail commercial environments"
+    include_any:
+      - retail
+      - shopping_center
+      - strip_mall
+      - storefront
+      - commercial
+      - parking_lot
+    exclude_any:
+      - single_family_only

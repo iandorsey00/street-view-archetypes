@@ -1,0 +1,43 @@
+run:
+  name: "demo-county-local-images"
+  output_dir: "../outputs/demo-county-local-images"
+
+boundary:
+  boundary_type: "county"
+  source: "file"
+  path: "../data/examples/boundaries/demo_county.geojson"
+  boundary_id: "demo-county-001"
+  boundary_name: "Demo County"
+
+sampling:
+  method: "grid"
+  spacing_meters: 600
+  min_points: 12
+  max_points: 60
+  heading_mode: "cardinal"
+  stratify_by: "quadrant"
+
+imagery:
+  provider: "google_street_view"
+  mode: "local_images"
+  local_manifest_path: "../data/local_images_manifest.csv"
+  image_width: 640
+  image_height: 640
+  field_of_view: 90
+  pitch: 0
+
+classification:
+  categories_config: "categories.yaml"
+  target_categories:
+    - "housing_units"
+    - "arterial_roadways"
+    - "shopping_centers"
+
+analysis:
+  summary_method: "descriptor_centroid"
+  comparison_mode: "within_run"
+
+reporting:
+  write_markdown: true
+  write_json: true
+  write_csv: true

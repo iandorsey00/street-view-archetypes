@@ -1,0 +1,32 @@
+[build-system]
+requires = ["setuptools>=69", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "street-view-archetypes"
+version = "0.1.0"
+description = "Config-driven research workflow for Street View archetype analysis."
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+authors = [{ name = "Ian Dorsey" }]
+dependencies = [
+  "PyYAML>=6.0",
+  "pydantic>=2.6",
+  "pandas>=2.2",
+  "numpy>=1.26",
+  "Pillow>=10.2",
+  "scikit-learn>=1.4",
+  "geopandas>=0.14",
+  "shapely>=2.0",
+  "matplotlib>=3.8",
+]
+
+[project.scripts]
+street-view-archetypes = "street_view_archetypes.cli:main"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]

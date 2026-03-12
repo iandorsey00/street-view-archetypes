@@ -1,0 +1,25 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "boundary_id": "demo-city-001",
+        "boundary_name": "Demo City",
+        "boundary_type": "city"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [-122.685, 45.515],
+            [-122.675, 45.515],
+            [-122.675, 45.525],
+            [-122.685, 45.525],
+            [-122.685, 45.515]
+          ]
+        ]
+      }
+    }
+  ]
+}
