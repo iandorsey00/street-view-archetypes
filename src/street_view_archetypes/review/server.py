@@ -355,9 +355,17 @@ INDEX_HTML = """
         if (!response.ok) {
           throw new Error(`Manifest request failed: ${response.status}`);
         }
-        state = await response.json();
-        if (!state.records || !state.records.length) {
+        const payload = await response.json();
+        if (!payload.records || !payload.records.length) {
           throw new Error('Manifest loaded but contains no records.');
+        }
+        state.records = payload.records;
+        state.summary = payload.summary;
+        if (typeof state.index !== 'number' || state.index < 0) {
+          state.index = 0;
+        }
+        if (state.index >= state.records.length) {
+          state.index = 0;
         }
         clearError();
         render();
