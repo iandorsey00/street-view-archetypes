@@ -3,12 +3,14 @@ from __future__ import annotations
 import json
 import os
 import re
+import sys
 import urllib.parse
 import urllib.request
 from pathlib import Path
 from typing import Any
 
 import yaml
+from shapely.geometry import mapping, shape
 
 from street_view_archetypes.config import load_pipeline_config
 from street_view_archetypes.pipeline import build_manifest
@@ -58,7 +60,9 @@ def init_study(
     place_name, state_name = _parse_place(place)
     slug = _slugify(f"{place_name}-{boundary_type}-{category}")
     state_fips = _state_fips(state_name)
+    reporter = ProgressReporter()
 
+    reporter.step("Preparing local study folders")
     config_dir = ensure_dir("configs/local")
     boundary_dir = ensure_dir("data/local/boundaries")
     manifest_dir = ensure_dir("data/local/manifests")
@@ -68,6 +72,7 @@ def init_study(
     manifest_path = (manifest_dir / f"{slug}-reviewed.csv").resolve()
     config_path = (config_dir / f"{slug}.yaml").resolve()
 
+    reporter.step(f"Fetching {boundary_type} boundary from Census TIGERweb")
     boundary_geojson = fetch_boundary_geojson(
         place_name=place_name,
         state_fips=state_fips,
@@ -75,6 +80,7 @@ def init_study(
     )
     boundary_path.write_text(json.dumps(boundary_geojson, indent=2), encoding="utf-8")
 
+    reporter.step("Writing local study config")
     config_payload = _build_local_config_payload(
         place=place,
         boundary_type=boundary_type,
@@ -89,14 +95,24 @@ def init_study(
     )
     config_path.write_text(yaml.safe_dump(config_payload, sort_keys=False), encoding="utf-8")
 
+    reporter.step("Generating sample manifest")
     config = load_pipeline_config(config_path)
     manifest = build_manifest(config)
     if download_imagery:
         api_key = imagery_api_key or os.getenv("GOOGLE_MAPS_API_KEY")
         if not api_key:
             raise ValueError("GOOGLE_MAPS_API_KEY is required for --download-imagery.")
-        manifest = download_reference_imagery(manifest, image_dir=image_dir, api_key=api_key)
+        reporter.step("Downloading Street View imagery")
+        manifest = download_reference_imagery(
+            manifest,
+            image_dir=image_dir,
+            api_key=api_key,
+            reporter=reporter,
+            manifest_path=manifest_path,
+        )
+    reporter.step("Writing reviewed manifest template")
     write_csv(manifest_path, manifest)
+    reporter.finish("Study initialization complete")
 
     return {
         "place": place,
@@ -141,22 +157,36 @@ def download_reference_imagery(
     *,
     image_dir: Path,
     api_key: str,
+    reporter: "ProgressReporter",
+    manifest_path: Path,
 ) -> list[dict[str, Any]]:
     updated_manifest: list[dict[str, Any]] = []
-    for record in manifest:
+    total = len(manifest)
+    for index, record in enumerate(manifest, start=1):
         filename = f"{record['sample_id']}_h{record['heading']}.jpg"
         image_path = image_dir / filename
+        temp_path = image_path.with_suffix(".part")
         url = f"{record['reference_url']}&key={urllib.parse.quote(api_key)}"
-        with urllib.request.urlopen(url) as response:
-            image_path.write_bytes(response.read())
-        updated_manifest.append(
-            {
-                **record,
-                "image_path": str(image_path.resolve()),
-                "reviewed_categories": [],
-                "review_notes": "",
-            }
-        )
+        try:
+            with urllib.request.urlopen(url) as response:
+                temp_path.write_bytes(response.read())
+            temp_path.replace(image_path)
+            updated_manifest.append(
+                {
+                    **record,
+                    "image_path": str(image_path.resolve()),
+                    "reviewed_categories": [],
+                    "review_notes": "",
+                }
+            )
+            reporter.progress("Downloading imagery", index, total)
+        except KeyboardInterrupt:
+            if temp_path.exists():
+                temp_path.unlink()
+            if updated_manifest:
+                write_csv(manifest_path, updated_manifest)
+            reporter.finish("Interrupted during imagery download; partial manifest saved")
+            raise
     return updated_manifest
 
 
@@ -263,10 +293,12 @@ def _query_feature_geojson(service_url: str, layer_id: int, object_id: int) -> d
             "objectIds": str(object_id),
             "outFields": "*",
             "returnGeometry": "true",
-            "f": "geojson",
+            "outSR": "4326",
+            "f": "pjson",
         }
     )
-    return _fetch_json(f"{service_url}/{layer_id}/query?{params}")
+    payload = _fetch_json(f"{service_url}/{layer_id}/query?{params}")
+    return _esri_feature_set_to_geojson(payload)
 
 
 def _extract_object_id(attributes: dict[str, Any]) -> int:
@@ -309,6 +341,36 @@ def _fetch_json(url: str) -> dict[str, Any]:
         return json.loads(response.read().decode("utf-8"))
 
 
+def _esri_feature_set_to_geojson(payload: dict[str, Any]) -> dict[str, Any]:
+    features = []
+    for feature in payload.get("features", []):
+        geometry = feature.get("geometry")
+        if not geometry:
+            continue
+        features.append(
+            {
+                "type": "Feature",
+                "geometry": _esri_geometry_to_geojson(geometry),
+                "properties": feature.get("attributes", {}),
+            }
+        )
+    if not features:
+        raise ValueError("Boundary query returned no usable geometry.")
+    return {"type": "FeatureCollection", "features": features}
+
+
+def _esri_geometry_to_geojson(geometry: dict[str, Any]) -> dict[str, Any]:
+    if "rings" in geometry:
+        polygon = shape({"type": "Polygon", "coordinates": geometry["rings"]})
+        return mapping(polygon)
+    if "paths" in geometry:
+        line = shape({"type": "MultiLineString", "coordinates": geometry["paths"]})
+        return mapping(line)
+    if {"x", "y"} <= geometry.keys():
+        return {"type": "Point", "coordinates": [geometry["x"], geometry["y"]]}
+    raise ValueError("Unsupported Esri geometry format.")
+
+
 def _parse_place(place: str) -> tuple[str, str]:
     parts = [part.strip() for part in place.split(",") if part.strip()]
     if len(parts) < 2:
@@ -326,3 +388,16 @@ def _state_fips(state_name: str) -> str:
 def _slugify(value: str) -> str:
     normalized = re.sub(r"[^a-z0-9]+", "-", value.lower()).strip("-")
     return re.sub(r"-{2,}", "-", normalized)
+
+
+class ProgressReporter:
+    def step(self, message: str) -> None:
+        print(f"[street-view-archetypes] {message}...", file=sys.stderr)
+
+    def progress(self, label: str, current: int, total: int) -> None:
+        print(f"\r[street-view-archetypes] {label}: {current}/{total}", end="", file=sys.stderr, flush=True)
+        if current == total:
+            print("", file=sys.stderr)
+
+    def finish(self, message: str) -> None:
+        print(f"[street-view-archetypes] {message}.", file=sys.stderr)

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import sys
 from pathlib import Path
 
 import pandas as pd
@@ -83,17 +84,21 @@ def main() -> None:
         return
 
     if args.command == "init-study":
-        result = init_study(
-            place=args.place,
-            boundary_type=args.boundary_type,
-            category=args.category,
-            download_imagery=args.download_imagery,
-            imagery_api_key=args.google_api_key,
-            spacing_meters=args.spacing_meters,
-            min_points=args.min_points,
-            max_points=args.max_points,
-        )
-        print(json.dumps(result, indent=2))
+        try:
+            result = init_study(
+                place=args.place,
+                boundary_type=args.boundary_type,
+                category=args.category,
+                download_imagery=args.download_imagery,
+                imagery_api_key=args.google_api_key,
+                spacing_meters=args.spacing_meters,
+                min_points=args.min_points,
+                max_points=args.max_points,
+            )
+            print(json.dumps(result, indent=2))
+        except KeyboardInterrupt:
+            print("Study initialization interrupted. Partial local files may have been created.", file=sys.stderr)
+            raise SystemExit(130)
         return
 
     if args.command == "run":

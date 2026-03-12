@@ -10,9 +10,17 @@ from street_view_archetypes.config import SamplingConfig
 
 
 def sample_points(boundary_gdf: gpd.GeoDataFrame, sampling_config: SamplingConfig) -> gpd.GeoDataFrame:
+    if boundary_gdf.geometry.isna().all():
+        raise ValueError("Boundary geometry is empty. Check the resolved boundary file before sampling.")
+
     projected = boundary_gdf.to_crs(3857)
     polygon = projected.unary_union
+    if polygon.is_empty:
+        raise ValueError("Boundary geometry is empty after projection. Sampling cannot continue.")
+
     minx, miny, maxx, maxy = polygon.bounds
+    if not np.isfinite([minx, miny, maxx, maxy]).all():
+        raise ValueError("Boundary bounds are not finite. Sampling cannot continue.")
 
     xs = np.arange(minx, maxx + sampling_config.spacing_meters, sampling_config.spacing_meters)
     ys = np.arange(miny, maxy + sampling_config.spacing_meters, sampling_config.spacing_meters)
