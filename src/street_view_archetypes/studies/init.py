@@ -141,8 +141,7 @@ def fetch_boundary_geojson(*, place_name: str, state_fips: str, boundary_type: s
 
     layer_id = _find_layer_id(service_url, desired_layer_fragment)
     match = _find_feature(service_url, layer_id, search_text, state_fips)
-    object_id = _extract_object_id(match["attributes"])
-    geojson = _query_feature_geojson(service_url, layer_id, object_id)
+    geojson = _query_feature_geojson(service_url, layer_id, match["attributes"])
 
     for feature in geojson.get("features", []):
         props = feature.setdefault("properties", {})
@@ -287,10 +286,11 @@ def _find_feature(service_url: str, layer_id: int, search_text: str, state_fips:
     return filtered[0]
 
 
-def _query_feature_geojson(service_url: str, layer_id: int, object_id: int) -> dict[str, Any]:
+def _query_feature_geojson(service_url: str, layer_id: int, attributes: dict[str, Any]) -> dict[str, Any]:
+    where_clause = _build_where_clause(attributes)
     params = urllib.parse.urlencode(
         {
-            "objectIds": str(object_id),
+            "where": where_clause,
             "outFields": "*",
             "returnGeometry": "true",
             "outSR": "4326",
@@ -301,11 +301,31 @@ def _query_feature_geojson(service_url: str, layer_id: int, object_id: int) -> d
     return _esri_feature_set_to_geojson(payload)
 
 
-def _extract_object_id(attributes: dict[str, Any]) -> int:
+def _build_where_clause(attributes: dict[str, Any]) -> str:
+    for key in ("GEOID", "GEOIDFQ"):
+        value = attributes.get(key)
+        if value:
+            return f"{key} = '{_escape_sql(str(value))}'"
+
+    name = attributes.get("BASENAME") or attributes.get("NAME")
+    state = (
+        attributes.get("STATE")
+        or attributes.get("STATEFP")
+        or attributes.get("STATEFP20")
+        or attributes.get("STATEFP24")
+    )
+    if name and state:
+        return (
+            f"BASENAME = '{_escape_sql(str(name))}' "
+            f"AND STATE = '{_escape_sql(str(state).zfill(2))}'"
+        )
+
     for key in ("OBJECTID", "OBJECTID_1", "FID"):
-        if key in attributes:
-            return int(attributes[key])
-    raise ValueError("Could not determine object id for TIGERweb feature.")
+        value = attributes.get(key)
+        if value is not None:
+            return f"{key} = {int(value)}"
+
+    raise ValueError("Could not build a stable TIGERweb query for the matched feature.")
 
 
 def _extract_geoid(attributes: dict[str, Any], fallback_name: str) -> str:
@@ -339,6 +359,10 @@ def _fetch_json(url: str) -> dict[str, Any]:
     request = urllib.request.Request(url, headers={"User-Agent": "street-view-archetypes/0.1"})
     with urllib.request.urlopen(request) as response:
         return json.loads(response.read().decode("utf-8"))
+
+
+def _escape_sql(value: str) -> str:
+    return value.replace("'", "''")
 
 
 def _esri_feature_set_to_geojson(payload: dict[str, Any]) -> dict[str, Any]:
