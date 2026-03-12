@@ -66,6 +66,9 @@ street-view-archetypes/
 │       ├── sampling/
 │       │   ├── __init__.py
 │       │   └── grid.py
+│       ├── studies/
+│       │   ├── __init__.py
+│       │   └── init.py
 │       ├── summarization/
 │       │   ├── __init__.py
 │       │   └── archetypes.py
@@ -112,6 +115,7 @@ This repository is designed to keep compliance concerns explicit.
 - The MVP defaults to storing metadata, manifests, and references rather than encouraging bulk redistribution of imagery.
 - You should confirm whether your intended acquisition, storage, display, derivative-use, and publication workflow complies with current Google terms before downloading, caching, or redistributing images.
 - If you need publication-safe workflows, consider using provider-abstraction so alternate licensed imagery sources can be substituted later.
+- The `init-study --download-imagery` path is opt-in so imagery downloading remains explicit and credentialed.
 
 This repository is not legal advice. Review the current Google Maps Platform Terms and any Street View Static API terms before production use.
 
@@ -152,9 +156,27 @@ python -m street_view_archetypes.cli run configs/pipeline.example.yaml
 
 For real study areas, keep the repository generic and run study-specific work through local configs and manifests.
 
-1. Create an uncommitted config in `configs/local/` for your chosen boundary.
+1. Create a local study automatically:
+
+```bash
+python -m street_view_archetypes.cli init-study \
+  --place "Example City, California" \
+  --boundary-type city \
+  --category housing_units
+```
+
+This command writes ignored files under:
+
+- `configs/local/`
+- `data/local/boundaries/`
+- `data/local/manifests/`
+
+It also fetches the study boundary automatically from U.S. Census TIGERweb.
+At the moment, this automated path is designed for U.S. `city` and `county` boundaries.
+
+2. If you prefer, create an uncommitted config manually in `configs/local/`.
    Start from [configs/templates/local-run.template.yaml](/Users/iandorsey/dev/street-view-archetypes/configs/templates/local-run.template.yaml).
-2. Generate a review manifest:
+3. Generate a review manifest:
 
 ```bash
 python -m street_view_archetypes.cli prepare-manifest \
@@ -162,7 +184,19 @@ python -m street_view_archetypes.cli prepare-manifest \
   outputs/your-run/review_manifest.csv
 ```
 
-3. Populate the manifest with compliant local imagery paths and review fields:
+If you want to download Street View images automatically during setup, use:
+
+```bash
+python -m street_view_archetypes.cli init-study \
+  --place "Example City, California" \
+  --boundary-type city \
+  --category housing_units \
+  --download-imagery
+```
+
+This requires a Google API key passed through `--google-api-key` or `GOOGLE_MAPS_API_KEY`.
+
+4. Populate the manifest with compliant local imagery paths and review fields:
 
 - `image_path`
 - `source_labels`
@@ -171,14 +205,14 @@ python -m street_view_archetypes.cli prepare-manifest \
 
 You can start from [data/examples/review_manifest.template.csv](/Users/iandorsey/dev/street-view-archetypes/data/examples/review_manifest.template.csv).
 
-4. Validate the reviewed manifest:
+5. Validate the reviewed manifest:
 
 ```bash
 python -m street_view_archetypes.cli validate-manifest \
   data/local/manifests/your-reviewed-manifest.csv
 ```
 
-5. Point `imagery.local_manifest_path` at that reviewed manifest and run the pipeline in `local_images` mode.
+6. Point `imagery.local_manifest_path` at that reviewed manifest and run the pipeline in `local_images` mode.
 
 The local-image workflow now produces:
 

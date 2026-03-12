@@ -8,6 +8,7 @@ import pandas as pd
 
 from street_view_archetypes.config import load_pipeline_config
 from street_view_archetypes.pipeline import build_manifest, run_pipeline
+from street_view_archetypes.studies.init import init_study
 from street_view_archetypes.utils.io import ensure_dir, write_csv
 
 
@@ -30,6 +31,19 @@ def build_parser() -> argparse.ArgumentParser:
         help="Validate a reviewed manifest CSV before running the pipeline",
     )
     validate_manifest.add_argument("manifest_csv")
+
+    init_study_parser = subparsers.add_parser(
+        "init-study",
+        help="Create a local study config, fetch a boundary, and prepare a manifest",
+    )
+    init_study_parser.add_argument("--place", required=True)
+    init_study_parser.add_argument("--boundary-type", choices=["city", "county"], required=True)
+    init_study_parser.add_argument("--category", required=True)
+    init_study_parser.add_argument("--download-imagery", action="store_true")
+    init_study_parser.add_argument("--google-api-key")
+    init_study_parser.add_argument("--spacing-meters", type=int, default=400)
+    init_study_parser.add_argument("--min-points", type=int, default=24)
+    init_study_parser.add_argument("--max-points", type=int, default=120)
 
     run = subparsers.add_parser("run", help="Run the MVP pipeline")
     run.add_argument("config_path")
@@ -66,6 +80,20 @@ def main() -> None:
     if args.command == "validate-manifest":
         validation = validate_manifest_csv(args.manifest_csv)
         print(json.dumps(validation, indent=2))
+        return
+
+    if args.command == "init-study":
+        result = init_study(
+            place=args.place,
+            boundary_type=args.boundary_type,
+            category=args.category,
+            download_imagery=args.download_imagery,
+            imagery_api_key=args.google_api_key,
+            spacing_meters=args.spacing_meters,
+            min_points=args.min_points,
+            max_points=args.max_points,
+        )
+        print(json.dumps(result, indent=2))
         return
 
     if args.command == "run":
