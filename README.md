@@ -231,8 +231,25 @@ The local-image workflow now produces:
 
 - a category-specific feature centroid
 - a centroid-nearest representative image
+- a top representative image set and contact sheet
 - within-category dispersion statistics
 - an optional illustrative composite image
+
+You can also generate detailed synthetic companion prompt artifacts from an empirical run:
+
+```bash
+python -m street_view_archetypes.cli generate-synthetic-prompt \
+  configs/local/your-run.yaml \
+  --provider openai
+```
+
+This writes prompt artifacts under `outputs/<run>/synthetic/<category>/`, including:
+
+- `prompt.txt`
+- `prompt.json`
+- `references.md`
+
+These prompts are intended for clearly labeled synthetic companion visuals, not the primary empirical output.
 
 The MVP can run in two modes:
 

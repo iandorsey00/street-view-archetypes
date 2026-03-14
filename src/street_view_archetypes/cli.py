@@ -11,6 +11,7 @@ from street_view_archetypes.config import load_pipeline_config
 from street_view_archetypes.pipeline import build_manifest, run_pipeline
 from street_view_archetypes.review.server import run_review_server
 from street_view_archetypes.studies.init import init_study
+from street_view_archetypes.synthetic.prompts import generate_synthetic_prompt_artifacts
 from street_view_archetypes.utils.io import ensure_dir, write_csv
 
 
@@ -54,6 +55,14 @@ def build_parser() -> argparse.ArgumentParser:
     review_manifest.add_argument("config_path")
     review_manifest.add_argument("--host", default="127.0.0.1")
     review_manifest.add_argument("--port", type=int, default=8765)
+
+    synthetic_prompt = subparsers.add_parser(
+        "generate-synthetic-prompt",
+        help="Generate detailed synthetic archetype prompt artifacts from an empirical run",
+    )
+    synthetic_prompt.add_argument("config_path")
+    synthetic_prompt.add_argument("--category")
+    synthetic_prompt.add_argument("--provider", default="generic")
 
     run = subparsers.add_parser("run", help="Run the MVP pipeline")
     run.add_argument("config_path")
@@ -112,6 +121,16 @@ def main() -> None:
 
     if args.command == "review-manifest":
         run_review_server(args.config_path, host=args.host, port=args.port)
+        return
+
+    if args.command == "generate-synthetic-prompt":
+        config = load_pipeline_config(args.config_path)
+        result = generate_synthetic_prompt_artifacts(
+            config,
+            category=args.category,
+            provider=args.provider,
+        )
+        print(json.dumps(result, indent=2))
         return
 
     if args.command == "run":
