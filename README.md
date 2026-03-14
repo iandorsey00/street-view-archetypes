@@ -252,9 +252,11 @@ This writes prompt artifacts under `outputs/<run>/synthetic/<category>/`, includ
 - `assets/representative_image.*`
 - `assets/representative_contact_sheet.*`
 - `assets/reference_images/`
+- `chatgpt_bundle_flat/`
 
 These prompts are intended for clearly labeled synthetic companion visuals, not the primary empirical output.
 The synthetic folder is meant to act as a self-contained handoff bundle so you do not need to manually gather images from multiple locations.
+The `chatgpt_bundle_flat/` directory is a flat, upload-ready bundle designed to stay within common ChatGPT file-count limits.
 
 The MVP can run in two modes:
 

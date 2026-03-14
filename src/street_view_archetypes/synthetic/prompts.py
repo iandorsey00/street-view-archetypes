@@ -64,6 +64,7 @@ def generate_synthetic_prompt_artifacts(
             "prompt_json": str(prompt_json_path),
             "references_md": str(references_md_path),
             "package_manifest_json": str(package_manifest_path),
+            "chatgpt_bundle_dir": str(category_dir / "chatgpt_bundle_flat"),
             "reference_image_count": len(prompt_payload["reference_images"]),
             "packaged_image_count": len(packaged_assets["reference_images"]),
             "provider": provider,
@@ -216,11 +217,20 @@ def package_reference_assets(category_dir: Path, payload: dict[str, Any]) -> dic
             }
         )
 
+    chatgpt_bundle = build_chatgpt_bundle(
+        category_dir=category_dir,
+        representative_image=representative_image_copy,
+        representative_contact_sheet=representative_contact_sheet_copy,
+        packaged_reference_images=packaged_reference_images,
+        prompt_text=payload["prompt"],
+    )
+
     return {
         "representative_image": str(representative_image_copy) if representative_image_copy else None,
         "representative_contact_sheet": str(representative_contact_sheet_copy) if representative_contact_sheet_copy else None,
         "reference_image_dir": str(reference_dir),
         "reference_images": packaged_reference_images,
+        "chatgpt_bundle": chatgpt_bundle,
     }
 
 
@@ -235,6 +245,73 @@ def _copy_if_present(source: str | None, destination: Path) -> Path | None:
     ensure_dir(destination.parent)
     shutil.copy2(source_path, destination)
     return destination
+
+
+def build_chatgpt_bundle(
+    *,
+    category_dir: Path,
+    representative_image: Path | None,
+    representative_contact_sheet: Path | None,
+    packaged_reference_images: list[dict[str, Any]],
+    prompt_text: str,
+    max_reference_images: int = 5,
+) -> dict[str, Any]:
+    bundle_dir = ensure_dir(category_dir / "chatgpt_bundle_flat")
+
+    prompt_path = bundle_dir / "01_prompt.txt"
+    write_text(prompt_path, prompt_text)
+
+    copied_files: list[str] = [str(prompt_path)]
+
+    if representative_contact_sheet and representative_contact_sheet.exists():
+        destination = bundle_dir / f"02_representative_contact_sheet{representative_contact_sheet.suffix}"
+        shutil.copy2(representative_contact_sheet, destination)
+        copied_files.append(str(destination))
+
+    if representative_image and representative_image.exists():
+        destination = bundle_dir / f"03_representative_image{representative_image.suffix}"
+        shutil.copy2(representative_image, destination)
+        copied_files.append(str(destination))
+
+    selected_reference_images = packaged_reference_images[:max_reference_images]
+    for index, row in enumerate(selected_reference_images, start=1):
+        packaged_path = row.get("packaged_path")
+        if not packaged_path:
+            continue
+        source = Path(packaged_path)
+        if not source.exists():
+            continue
+        destination = bundle_dir / f"{index + 3:02d}_{source.name}"
+        shutil.copy2(source, destination)
+        copied_files.append(str(destination))
+
+    readme_path = bundle_dir / "00_README.txt"
+    write_text(
+        readme_path,
+        "\n".join(
+            [
+                "ChatGPT upload bundle",
+                "",
+                "Recommended upload order:",
+                "1. 01_prompt.txt",
+                "2. 02_representative_contact_sheet.*",
+                "3. 03_representative_image.*",
+                "4. Remaining numbered reference images",
+                "",
+                "This flat bundle is intentionally capped to stay within common upload limits.",
+                "The synthetic image should be labeled illustrative rather than empirical.",
+            ]
+        )
+        + "\n",
+    )
+    copied_files.insert(0, str(readme_path))
+
+    return {
+        "bundle_dir": str(bundle_dir),
+        "file_count": len(copied_files),
+        "files": copied_files,
+        "max_reference_images": max_reference_images,
+    }
 
 
 def _category_prompt_blocks(category_name: str) -> tuple[str, str]:
