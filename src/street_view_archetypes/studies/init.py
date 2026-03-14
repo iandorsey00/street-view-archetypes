@@ -60,10 +60,12 @@ def init_study(
     reporter = ProgressReporter()
 
     reporter.step("Preparing local study folders")
-    config_dir = ensure_dir("configs/local")
-    boundary_dir = ensure_dir("data/local/boundaries")
-    manifest_dir = ensure_dir("data/local/manifests")
-    image_dir = ensure_dir(Path("data/local/images") / slug)
+    local_root = ensure_dir("local")
+    config_dir = ensure_dir(local_root / "configs")
+    data_dir = ensure_dir(local_root / "data")
+    boundary_dir = ensure_dir(data_dir / "boundaries")
+    manifest_dir = ensure_dir(data_dir / "manifests")
+    image_dir = ensure_dir(data_dir / "images" / slug)
 
     boundary_path = (boundary_dir / f"{slug}.geojson").resolve()
     manifest_path = (manifest_dir / f"{slug}-reviewed.csv").resolve()
@@ -222,8 +224,8 @@ def _build_local_config_payload(
     max_points: int,
     download_imagery: bool,
 ) -> dict[str, Any]:
-    boundary_rel = Path("../../") / boundary_path.relative_to(Path.cwd())
-    manifest_rel = Path("../../") / manifest_path.relative_to(Path.cwd())
+    boundary_rel = Path("../data") / boundary_path.relative_to(Path.cwd() / "local" / "data")
+    manifest_rel = Path("../data") / manifest_path.relative_to(Path.cwd() / "local" / "data")
     return {
         "run": {
             "name": slug,
@@ -254,7 +256,7 @@ def _build_local_config_payload(
             "pitch": 0,
         },
         "classification": {
-            "categories_config": "../categories.yaml",
+            "categories_config": "../../configs/categories.yaml",
             "target_categories": [category],
         },
         "analysis": {

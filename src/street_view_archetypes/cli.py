@@ -231,7 +231,7 @@ def fetch_imagery_for_config(
         raise ValueError("GOOGLE_MAPS_API_KEY is required for fetch-imagery.")
 
     if image_dir is None:
-        target_dir = ensure_dir(Path("data/local/images") / config.run.name)
+        target_dir = ensure_dir(Path("local/data/images") / config.run.name)
     else:
         target_dir = ensure_dir(Path(image_dir).resolve())
 

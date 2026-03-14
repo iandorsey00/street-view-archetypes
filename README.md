@@ -170,22 +170,22 @@ python -m street_view_archetypes.cli init-study \
 
 This command writes ignored files under:
 
-- `configs/local/`
-- `data/local/boundaries/`
-- `data/local/manifests/`
+- `local/configs/`
+- `local/data/boundaries/`
+- `local/data/manifests/`
 
 It also fetches the study boundary automatically from U.S. Census TIGERweb.
 At the moment, this automated path is designed for U.S. `city` and `county` boundaries.
 
-2. If you prefer, create an uncommitted config manually in `configs/local/`.
+2. If you prefer, create an uncommitted config manually in `local/configs/`.
    Start from [configs/templates/local-run.template.yaml](/Users/iandorsey/dev/street-view-archetypes/configs/templates/local-run.template.yaml).
    For arterial midblock studies based on a roadway line layer, start from [configs/templates/local-arterial-midblock.template.yaml](/Users/iandorsey/dev/street-view-archetypes/configs/templates/local-arterial-midblock.template.yaml).
 3. Generate a review manifest:
 
 ```bash
 python -m street_view_archetypes.cli prepare-manifest \
-  configs/local/your-run.yaml \
-  outputs/your-run/review_manifest.csv
+  local/configs/your-run.yaml \
+  local/data/manifests/your-run-reviewed.csv
 ```
 
 If you want to download Street View images automatically during setup, use:
@@ -213,7 +213,7 @@ Instead of editing the CSV manually, you can start the local review helper:
 
 ```bash
 python -m street_view_archetypes.cli review-manifest \
-  /Users/iandorsey/dev/street-view-archetypes/configs/local/mission-viejo-city-housing-units.yaml
+  /Users/iandorsey/dev/street-view-archetypes/local/configs/mission-viejo-city-housing-units.yaml
 ```
 
 Then open [http://127.0.0.1:8765](http://127.0.0.1:8765) in your browser. Labels are saved directly back into the manifest CSV.
@@ -223,7 +223,7 @@ The reviewer now tracks an explicit `review_status` field so saved progress rema
 
 ```bash
 python -m street_view_archetypes.cli validate-manifest \
-  data/local/manifests/your-reviewed-manifest.csv
+  local/data/manifests/your-reviewed-manifest.csv
 ```
 
 6. Point `imagery.local_manifest_path` at that reviewed manifest and run the pipeline in `local_images` mode.
@@ -240,7 +240,7 @@ You can also generate detailed synthetic companion prompt artifacts from an empi
 
 ```bash
 python -m street_view_archetypes.cli generate-synthetic-prompt \
-  configs/local/your-run.yaml \
+  local/configs/your-run.yaml \
   --provider openai
 ```
 
@@ -284,7 +284,7 @@ Example:
 ```yaml
 sampling:
   method: "road_network"
-  network_path: "../../data/local/networks/study_area_arterials.geojson"
+  network_path: "../data/networks/study_area_arterials.geojson"
   spacing_meters: 120
   min_points: 40
   max_points: 160
@@ -312,8 +312,9 @@ The main pipeline config controls:
 To keep the repository place-neutral:
 
 - commit only generic example configs and toy boundaries
-- put real study-area configs in `configs/local/`
-- put real study-area boundary files and manifests in `data/local/`
+- put real study-area state under `local/`
+- put configs in `local/configs/`
+- put boundaries, manifests, networks, and private synthetic images in `local/data/`
 - treat generated outputs as uncommitted run artifacts
 
 See:

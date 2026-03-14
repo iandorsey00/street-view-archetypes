@@ -5,13 +5,13 @@ run:
 boundary:
   boundary_type: "city"
   source: "file"
-  path: "../../data/local/boundaries/study_area_boundary.geojson"
+  path: "../data/boundaries/study_area_boundary.geojson"
   boundary_id: "study-area-id"
   boundary_name: "Study Area"
 
 sampling:
   method: "road_network"
-  network_path: "../../data/local/networks/study_area_arterials.geojson"
+  network_path: "../data/networks/study_area_arterials.geojson"
   spacing_meters: 120
   min_points: 40
   max_points: 160
@@ -23,14 +23,14 @@ sampling:
 imagery:
   provider: "google_street_view"
   mode: "local_images"
-  local_manifest_path: "../../data/local/manifests/study-area-arterial-midblock-reviewed.csv"
+  local_manifest_path: "../data/manifests/study-area-arterial-midblock-reviewed.csv"
   image_width: 640
   image_height: 640
   field_of_view: 90
   pitch: 0
 
 classification:
-  categories_config: "../categories.yaml"
+  categories_config: "../../configs/categories.yaml"
   target_categories:
     - "arterial_roadways"
 

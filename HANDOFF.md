@@ -70,43 +70,43 @@ Generate a manifest from an existing local config:
 
 ```bash
 python -m street_view_archetypes.cli prepare-manifest \
-  configs/local/your-study.yaml \
-  data/local/manifests/your-study-reviewed.csv
+  local/configs/your-study.yaml \
+  local/data/manifests/your-study-reviewed.csv
 ```
 
 Download imagery for a prepared manifest:
 
 ```bash
 python -m street_view_archetypes.cli fetch-imagery \
-  configs/local/your-study.yaml
+  local/configs/your-study.yaml
 ```
 
 Launch the review UI:
 
 ```bash
 python -m street_view_archetypes.cli review-manifest \
-  configs/local/your-study.yaml
+  local/configs/your-study.yaml
 ```
 
 Validate a reviewed manifest:
 
 ```bash
 python -m street_view_archetypes.cli validate-manifest \
-  data/local/manifests/your-study-reviewed.csv
+  local/data/manifests/your-study-reviewed.csv
 ```
 
 Run analysis after review:
 
 ```bash
 python -m street_view_archetypes.cli run \
-  configs/local/your-study.yaml
+  local/configs/your-study.yaml
 ```
 
 Generate synthetic prompt artifacts:
 
 ```bash
 python -m street_view_archetypes.cli generate-synthetic-prompt \
-  configs/local/your-study.yaml \
+  local/configs/your-study.yaml \
   --provider openai
 ```
 
@@ -161,9 +161,7 @@ Comparison PDFs currently live under:
 
 Keep study-specific work out of version control:
 
-- `configs/local/`
-- `data/local/`
-- `HANDOFF.local.md`
+- `local/`
 
 ## Recommended Next Improvements
 
