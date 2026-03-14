@@ -248,8 +248,13 @@ This writes prompt artifacts under `outputs/<run>/synthetic/<category>/`, includ
 - `prompt.txt`
 - `prompt.json`
 - `references.md`
+- `package_manifest.json`
+- `assets/representative_image.*`
+- `assets/representative_contact_sheet.*`
+- `assets/reference_images/`
 
 These prompts are intended for clearly labeled synthetic companion visuals, not the primary empirical output.
+The synthetic folder is meant to act as a self-contained handoff bundle so you do not need to manually gather images from multiple locations.
 
 The MVP can run in two modes:
 

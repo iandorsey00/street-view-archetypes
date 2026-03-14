@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import shutil
 from pathlib import Path
 from typing import Any
 
@@ -48,16 +49,23 @@ def generate_synthetic_prompt_artifacts(
         prompt_txt_path = category_dir / "prompt.txt"
         prompt_json_path = category_dir / "prompt.json"
         references_md_path = category_dir / "references.md"
+        package_manifest_path = category_dir / "package_manifest.json"
+
+        packaged_assets = package_reference_assets(category_dir, prompt_payload)
+        prompt_payload["packaged_assets"] = packaged_assets
 
         write_text(prompt_txt_path, prompt_payload["prompt"])
         write_json(prompt_json_path, prompt_payload)
         write_text(references_md_path, render_reference_markdown(prompt_payload))
+        write_json(package_manifest_path, packaged_assets)
 
         results[category_name] = {
             "prompt_txt": str(prompt_txt_path),
             "prompt_json": str(prompt_json_path),
             "references_md": str(references_md_path),
+            "package_manifest_json": str(package_manifest_path),
             "reference_image_count": len(prompt_payload["reference_images"]),
+            "packaged_image_count": len(packaged_assets["reference_images"]),
             "provider": provider,
         }
 
@@ -169,6 +177,11 @@ def render_reference_markdown(payload: dict[str, Any]) -> str:
     lines.extend(
         [
             "",
+            "## Packaged Assets",
+            f"- Representative image copy: {payload['packaged_assets']['representative_image']}",
+            f"- Representative contact sheet copy: {payload['packaged_assets']['representative_contact_sheet']}",
+            f"- Packaged reference image directory: {payload['packaged_assets']['reference_image_dir']}",
+            "",
             "## Usage Note",
             "These prompts are intended for synthetic companion visuals only, not the primary empirical output.",
             "",
@@ -177,6 +190,51 @@ def render_reference_markdown(payload: dict[str, Any]) -> str:
         ]
     )
     return "\n".join(lines) + "\n"
+
+
+def package_reference_assets(category_dir: Path, payload: dict[str, Any]) -> dict[str, Any]:
+    assets_dir = ensure_dir(category_dir / "assets")
+    reference_dir = ensure_dir(assets_dir / "reference_images")
+
+    representative_image_copy = _copy_if_present(
+        payload["category_summary"].get("representative_image_path"),
+        assets_dir / "representative_image" ,
+    )
+    representative_contact_sheet_copy = _copy_if_present(
+        payload["category_summary"].get("representative_contact_sheet_path"),
+        assets_dir / "representative_contact_sheet",
+    )
+
+    packaged_reference_images = []
+    for index, row in enumerate(payload["reference_images"], start=1):
+        source_path = row.get("image_path")
+        copied_path = _copy_if_present(source_path, reference_dir / f"{index:02d}_{Path(str(source_path)).name}")
+        packaged_reference_images.append(
+            {
+                **row,
+                "packaged_path": str(copied_path) if copied_path else None,
+            }
+        )
+
+    return {
+        "representative_image": str(representative_image_copy) if representative_image_copy else None,
+        "representative_contact_sheet": str(representative_contact_sheet_copy) if representative_contact_sheet_copy else None,
+        "reference_image_dir": str(reference_dir),
+        "reference_images": packaged_reference_images,
+    }
+
+
+def _copy_if_present(source: str | None, destination: Path) -> Path | None:
+    if not source:
+        return None
+    source_path = Path(source)
+    if not source_path.exists():
+        return None
+    if destination.suffix == "":
+        destination = destination.with_suffix(source_path.suffix)
+    ensure_dir(destination.parent)
+    shutil.copy2(source_path, destination)
+    return destination
 
 
 def _category_prompt_blocks(category_name: str) -> tuple[str, str]:
