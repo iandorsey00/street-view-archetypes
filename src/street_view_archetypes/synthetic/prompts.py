@@ -37,7 +37,7 @@ def generate_synthetic_prompt_artifacts(
         if category_summary is None:
             raise ValueError(f"Category '{category_name}' not found in run outputs.")
 
-        category_dir = ensure_dir(base_dir / category_name)
+        category_dir = reset_dir(base_dir / category_name)
         prompt_payload = build_prompt_payload(
             config=config,
             boundary_summary=boundary_summary,
@@ -75,6 +75,12 @@ def generate_synthetic_prompt_artifacts(
         "output_dir": str(base_dir),
         "categories": results,
     }
+
+
+def reset_dir(path: Path) -> Path:
+    if path.exists():
+        shutil.rmtree(path)
+    return ensure_dir(path)
 
 
 def build_prompt_payload(
