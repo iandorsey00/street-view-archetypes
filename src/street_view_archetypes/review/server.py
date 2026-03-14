@@ -523,7 +523,8 @@ def build_rubric(categories: list[str]) -> dict[str, str]:
             "body": (
                 "Label <code>arterial_roadways</code> when the image is primarily a major roadway scene with clear through-movement function, "
                 "such as multiple travel lanes, turn lanes, medians, wide intersections, commercial frontages, or other cues of an arterial street. "
-                "Do not label it when the view is mainly a local residential street, cul-de-sac, driveway, parking aisle, or when the arterial character is not visually legible."
+                "Do not label it when the view is mainly a local residential street, cul-de-sac, driveway, parking aisle, or when the arterial character is not visually legible. "
+                "If your study is targeting midblock through segments specifically, exclude signal-dominated intersections and approach views with strong turn-pocket or stop-bar geometry."
             ),
         }
     return {

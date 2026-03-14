@@ -16,7 +16,7 @@ from street_view_archetypes.summarization.archetypes import summarize_categories
 def build_manifest(config: PipelineConfig) -> list[dict]:
     boundary_gdf = load_boundary(config.boundary)
     sampled_points = sample_points(boundary_gdf, config.sampling)
-    sample_records = expand_headings(sampled_points, config.sampling.heading_mode)
+    sample_records = expand_headings(sampled_points, config.sampling)
     return build_reference_manifest(sample_records, config.imagery)
 
 

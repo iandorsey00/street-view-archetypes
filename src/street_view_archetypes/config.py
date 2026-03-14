@@ -26,7 +26,9 @@ class SamplingConfig(BaseModel):
     spacing_meters: int = Field(default=500, gt=0)
     min_points: int = Field(default=25, gt=0)
     max_points: int = Field(default=100, gt=0)
-    heading_mode: Literal["cardinal", "single"] = "cardinal"
+    heading_mode: Literal["cardinal", "single", "custom", "road_parallel_both", "road_parallel_single"] = "cardinal"
+    heading_values: list[int] | None = None
+    heading_bearing_field: str = "sample_bearing"
     stratify_by: Literal["quadrant", "none"] = "quadrant"
 
 

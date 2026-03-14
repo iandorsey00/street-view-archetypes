@@ -15,6 +15,8 @@ sampling:
   min_points: 24
   max_points: 120
   heading_mode: "cardinal"
+  # Optional for heading_mode: "custom"
+  # heading_values: [90, 270]
   stratify_by: "quadrant"
 
 imagery:

@@ -35,6 +35,7 @@ def _render_markdown_report(config: PipelineConfig, artifacts: RunArtifacts) -> 
         "## Sampling",
         f"- Sample references: {len(artifacts.sample_records)}",
         f"- Heading mode: {config.sampling.heading_mode}",
+        f"- Heading values: {config.sampling.heading_values if config.sampling.heading_values else 'derived from mode'}",
         f"- Sampling method: {config.sampling.method}",
         "",
         "## Category Summaries",

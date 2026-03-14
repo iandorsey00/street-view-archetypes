@@ -258,6 +258,32 @@ These prompts are intended for clearly labeled synthetic companion visuals, not 
 The synthetic folder is meant to act as a self-contained handoff bundle so you do not need to manually gather images from multiple locations.
 The `chatgpt_bundle_flat/` directory is a flat, upload-ready bundle designed to stay within common ChatGPT file-count limits.
 
+For corridor studies, you can now constrain Street View camera direction in the sampling config:
+
+- `heading_mode: "cardinal"` generates `0`, `90`, `180`, and `270`
+- `heading_mode: "single"` generates `0`
+- `heading_mode: "custom"` uses an explicit `heading_values` list such as `[90, 270]`
+- `heading_mode: "road_parallel_both"` and `road_parallel_single` are reserved for future samplers that attach a local road bearing to each sampled record
+
+For arterial midblock or through-segment studies, the recommended neutral pattern is:
+
+- separate midblock through-segment runs from intersection-heavy runs
+- use `heading_mode: "custom"` to keep views aligned with the roadway rather than perpendicular to it
+- combine heading constraints with review decisions that exclude signalized intersections and approach geometry when your target is the through-running arterial form
+
+Example:
+
+```yaml
+sampling:
+  method: "grid"
+  spacing_meters: 300
+  min_points: 40
+  max_points: 160
+  heading_mode: "custom"
+  heading_values: [90, 270]
+  stratify_by: "quadrant"
+```
+
 The MVP can run in two modes:
 
 - `references_only`: create sample/reference manifests and summary shells

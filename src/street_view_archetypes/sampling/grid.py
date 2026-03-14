@@ -50,10 +50,10 @@ def sample_points(boundary_gdf: gpd.GeoDataFrame, sampling_config: SamplingConfi
     return samples
 
 
-def expand_headings(samples: gpd.GeoDataFrame, heading_mode: str) -> list[dict[str, object]]:
-    headings = [0, 90, 180, 270] if heading_mode == "cardinal" else [0]
+def expand_headings(samples: gpd.GeoDataFrame, sampling_config: SamplingConfig) -> list[dict[str, object]]:
     records: list[dict[str, object]] = []
     for row in samples.itertuples():
+        headings = _resolve_headings(row, sampling_config)
         for heading in headings:
             records.append(
                 {
@@ -65,6 +65,43 @@ def expand_headings(samples: gpd.GeoDataFrame, heading_mode: str) -> list[dict[s
                 }
             )
     return records
+
+
+def _resolve_headings(row: object, sampling_config: SamplingConfig) -> list[int]:
+    if sampling_config.heading_mode == "cardinal":
+        return [0, 90, 180, 270]
+    if sampling_config.heading_mode == "single":
+        return [0]
+    if sampling_config.heading_mode == "custom":
+        if not sampling_config.heading_values:
+            raise ValueError("sampling.heading_values is required when heading_mode='custom'.")
+        return _normalize_heading_values(sampling_config.heading_values)
+    if sampling_config.heading_mode in {"road_parallel_both", "road_parallel_single"}:
+        bearing = getattr(row, sampling_config.heading_bearing_field, None)
+        if bearing is None:
+            raise ValueError(
+                "Road-parallel heading modes require sampled records to include a "
+                f"'{sampling_config.heading_bearing_field}' field."
+            )
+        primary_heading = int(round(float(bearing))) % 360
+        if sampling_config.heading_mode == "road_parallel_single":
+            return [primary_heading]
+        return _normalize_heading_values([primary_heading, (primary_heading + 180) % 360])
+    raise ValueError(f"Unsupported heading mode: {sampling_config.heading_mode}")
+
+
+def _normalize_heading_values(values: list[int]) -> list[int]:
+    normalized: list[int] = []
+    seen: set[int] = set()
+    for value in values:
+        heading = int(value) % 360
+        if heading in seen:
+            continue
+        seen.add(heading)
+        normalized.append(heading)
+    if not normalized:
+        raise ValueError("At least one heading value is required.")
+    return normalized
 
 
 def _quadrant_label(x: float, y: float, centroid_x: float, centroid_y: float) -> str:
