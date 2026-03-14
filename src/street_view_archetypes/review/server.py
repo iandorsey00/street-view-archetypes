@@ -28,6 +28,7 @@ def run_review_server(config_path: str | Path, host: str = "127.0.0.1", port: in
     )
     server = ReviewHTTPServer((host, port), ReviewHandler)
     server.store = store
+    server.rubric = build_rubric(config.classification.target_categories)
     print(f"[street-view-archetypes] Review server running at http://{host}:{port}", flush=True)
     print(f"[street-view-archetypes] Saving updates directly to {manifest_path}", flush=True)
     try:
@@ -99,6 +100,7 @@ class ReviewStore:
 
 class ReviewHTTPServer(ThreadingHTTPServer):
     store: ReviewStore
+    rubric: dict[str, str]
 
 
 class ReviewHandler(BaseHTTPRequestHandler):
@@ -107,7 +109,7 @@ class ReviewHandler(BaseHTTPRequestHandler):
     def do_GET(self) -> None:
         parsed = urllib.parse.urlparse(self.path)
         if parsed.path == "/":
-            self._send_html(INDEX_HTML)
+            self._send_html(render_index_html(self.server.rubric))
             return
         if parsed.path == "/api/manifest":
             self._send_json(
@@ -366,8 +368,8 @@ INDEX_HTML = """
         <div class="eyebrow">Labeling</div>
         <h1 id="record-label">Record</h1>
         <div class="rubric">
-          <strong>Housing units rubric</strong>
-          Label <code>housing_units</code> when the image is primarily a residential scene and the housing form is visually legible. Multiple houses are fine. Do not label it when housing is only incidental, distant, obscured, or when the scene is mainly roadway, parking, open space, walls, or commercial frontage.
+          <strong>{{RUBRIC_TITLE}}</strong>
+          {{RUBRIC_BODY}}
         </div>
         <div class="chips" id="category-chips"></div>
         <textarea id="review-notes" placeholder="Optional review notes"></textarea>
@@ -511,3 +513,30 @@ INDEX_HTML = """
 </body>
 </html>
 """
+
+
+def build_rubric(categories: list[str]) -> dict[str, str]:
+    primary = categories[0] if categories else ""
+    if primary == "arterial_roadways":
+        return {
+            "title": "Arterial roadways rubric",
+            "body": (
+                "Label <code>arterial_roadways</code> when the image is primarily a major roadway scene with clear through-movement function, "
+                "such as multiple travel lanes, turn lanes, medians, wide intersections, commercial frontages, or other cues of an arterial street. "
+                "Do not label it when the view is mainly a local residential street, cul-de-sac, driveway, parking aisle, or when the arterial character is not visually legible."
+            ),
+        }
+    return {
+        "title": "Housing units rubric",
+        "body": (
+            "Label <code>housing_units</code> when the image is primarily a residential scene and the housing form is visually legible. "
+            "Multiple houses are fine. Do not label it when housing is only incidental, distant, obscured, or when the scene is mainly roadway, parking, open space, walls, or commercial frontage."
+        ),
+    }
+
+
+def render_index_html(rubric: dict[str, str]) -> str:
+    return (
+        INDEX_HTML.replace("{{RUBRIC_TITLE}}", rubric["title"])
+        .replace("{{RUBRIC_BODY}}", rubric["body"])
+    )
