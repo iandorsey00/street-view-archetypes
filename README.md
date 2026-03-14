@@ -2,6 +2,8 @@
 
 Street View Archetypes is a reproducible research workflow for estimating and comparing the visual character of built-environment categories within configurable geographic boundaries.
 
+Current project version: `0.1.0`
+
 The initial MVP focuses on:
 
 - Boundary types: `cities`, `counties`
