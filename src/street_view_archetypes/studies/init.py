@@ -4,6 +4,7 @@ import json
 import os
 import re
 import sys
+import urllib.error
 import urllib.parse
 import urllib.request
 from pathlib import Path
@@ -160,7 +161,21 @@ def download_reference_imagery(
         filename = f"{record['sample_id']}_h{record['heading']}.jpg"
         image_path = image_dir / filename
         temp_path = image_path.with_suffix(".part")
-        url = f"{record['reference_url']}&key={urllib.parse.quote(api_key)}"
+        existing_image_path = str(record.get("image_path") or "").strip()
+        if existing_image_path and Path(existing_image_path).exists():
+            updated_manifest.append(
+                {
+                    **record,
+                    "image_path": existing_image_path,
+                }
+            )
+            reporter.progress("Downloading imagery", index, total)
+            continue
+
+        reference_url = str(record.get("reference_url") or "").strip()
+        if not reference_url:
+            raise ValueError(f"Manifest record {record.get('sample_id')} is missing reference_url.")
+        url = f"{reference_url}&key={urllib.parse.quote(api_key)}"
         try:
             with urllib.request.urlopen(url) as response:
                 temp_path.write_bytes(response.read())
@@ -181,6 +196,16 @@ def download_reference_imagery(
                 write_csv(manifest_path, updated_manifest)
             reporter.finish("Interrupted during imagery download; partial manifest saved")
             raise
+        except urllib.error.HTTPError as exc:
+            if temp_path.exists():
+                temp_path.unlink()
+            detail = exc.read().decode("utf-8", errors="ignore").strip()
+            if updated_manifest:
+                write_csv(manifest_path, updated_manifest)
+            raise ValueError(
+                f"Street View download failed for {record.get('sample_id')} heading {record.get('heading')}: "
+                f"HTTP {exc.code} {exc.reason}. {detail}"
+            ) from exc
     return updated_manifest
 
 

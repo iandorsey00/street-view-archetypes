@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import sys
 from pathlib import Path
 
@@ -10,7 +11,7 @@ import pandas as pd
 from street_view_archetypes.config import load_pipeline_config
 from street_view_archetypes.pipeline import build_manifest, run_pipeline
 from street_view_archetypes.review.server import run_review_server
-from street_view_archetypes.studies.init import init_study
+from street_view_archetypes.studies.init import ProgressReporter, download_reference_imagery, init_study
 from street_view_archetypes.synthetic.prompts import generate_synthetic_prompt_artifacts
 from street_view_archetypes.utils.io import ensure_dir, write_csv
 
@@ -34,6 +35,14 @@ def build_parser() -> argparse.ArgumentParser:
         help="Validate a reviewed manifest CSV before running the pipeline",
     )
     validate_manifest.add_argument("manifest_csv")
+
+    fetch_imagery = subparsers.add_parser(
+        "fetch-imagery",
+        help="Download Street View images for the manifest referenced by a config",
+    )
+    fetch_imagery.add_argument("config_path")
+    fetch_imagery.add_argument("--google-api-key")
+    fetch_imagery.add_argument("--image-dir")
 
     init_study_parser = subparsers.add_parser(
         "init-study",
@@ -99,6 +108,19 @@ def main() -> None:
     if args.command == "validate-manifest":
         validation = validate_manifest_csv(args.manifest_csv)
         print(json.dumps(validation, indent=2))
+        return
+
+    if args.command == "fetch-imagery":
+        try:
+            result = fetch_imagery_for_config(
+                args.config_path,
+                imagery_api_key=args.google_api_key,
+                image_dir=args.image_dir,
+            )
+            print(json.dumps(result, indent=2))
+        except KeyboardInterrupt:
+            print("Imagery download interrupted. Partial manifest may have been saved.", file=sys.stderr)
+            raise SystemExit(130)
         return
 
     if args.command == "init-study":
@@ -190,6 +212,50 @@ def validate_manifest_csv(path: str | Path) -> dict[str, object]:
         "rows_missing_image_path": missing_image_rows[:25],
         "rows_with_invalid_image_path": invalid_path_rows[:25],
         "valid": len(missing_columns) == 0 and not missing_image_rows and not invalid_path_rows,
+    }
+
+
+def fetch_imagery_for_config(
+    config_path: str | Path,
+    *,
+    imagery_api_key: str | None = None,
+    image_dir: str | Path | None = None,
+) -> dict[str, object]:
+    config = load_pipeline_config(config_path)
+    manifest_path = config.imagery.local_manifest_path
+    if manifest_path is None:
+        raise ValueError("imagery.local_manifest_path is required to fetch imagery.")
+
+    api_key = imagery_api_key or os.getenv("GOOGLE_MAPS_API_KEY")
+    if not api_key:
+        raise ValueError("GOOGLE_MAPS_API_KEY is required for fetch-imagery.")
+
+    if image_dir is None:
+        target_dir = ensure_dir(Path("data/local/images") / config.run.name)
+    else:
+        target_dir = ensure_dir(Path(image_dir).resolve())
+
+    manifest_df = pd.read_csv(manifest_path)
+    records = manifest_df.to_dict(orient="records")
+    reporter = ProgressReporter()
+    reporter.step("Downloading Street View imagery")
+    updated_manifest = download_reference_imagery(
+        records,
+        image_dir=target_dir,
+        api_key=api_key,
+        reporter=reporter,
+        manifest_path=manifest_path,
+    )
+    write_csv(manifest_path, updated_manifest)
+    reporter.finish("Imagery download complete")
+
+    downloaded_count = sum(1 for row in updated_manifest if str(row.get("image_path") or "").strip())
+    return {
+        "run_name": config.run.name,
+        "manifest_path": str(manifest_path),
+        "image_dir": str(target_dir.resolve()),
+        "downloaded_rows": downloaded_count,
+        "record_count": len(updated_manifest),
     }
 
 
