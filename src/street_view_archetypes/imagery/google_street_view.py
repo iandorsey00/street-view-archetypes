@@ -34,7 +34,10 @@ def merge_local_manifest(reference_manifest: list[dict], local_manifest_path: Pa
     local_df = pd.read_csv(local_manifest_path)
     if "sample_id" not in local_df.columns:
         raise ValueError("Local image manifest must include a 'sample_id' column.")
-    merged = manifest_df.merge(local_df, on="sample_id", how="left", suffixes=("", "_local"))
+    merge_keys = ["sample_id"]
+    if "heading" in manifest_df.columns and "heading" in local_df.columns:
+        merge_keys.append("heading")
+    merged = manifest_df.merge(local_df, on=merge_keys, how="left", suffixes=("", "_local"))
     merged["image_path"] = merged.get("image_path_local", merged.get("image_path"))
     merged["source_labels"] = merged.apply(_normalize_labels, axis=1)
     merged["reviewed_categories"] = merged.apply(_normalize_reviewed_categories, axis=1)
