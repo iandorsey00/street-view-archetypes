@@ -46,12 +46,19 @@ def _render_markdown_report(config: PipelineConfig, artifacts: RunArtifacts) -> 
                 f"### {category}",
                 f"- Classified references: {summary['reference_count']}",
                 f"- Representative image path: {summary['representative_image_path']}",
+                f"- Representative contact sheet path: {summary['representative_contact_sheet_path']}",
                 f"- Feature centroid available: {'yes' if summary['feature_centroid'] else 'no'}",
                 f"- Feature dimension: {summary['feature_dimension']}",
                 f"- Within-category dispersion: {summary['within_category_dispersion']}",
                 f"- Composite image path: {summary['composite_image_path']}",
             ]
         )
+        if summary["representative_image_set"]:
+            lines.append("- Top representative images:")
+            for item in summary["representative_image_set"]:
+                lines.append(
+                    f"  - {item['sample_id']} heading {item['heading']} distance {item['distance_to_centroid']}: {item['image_path']}"
+                )
         if summary["notes"]:
             for note in summary["notes"]:
                 lines.append(f"- Note: {note}")

@@ -50,6 +50,7 @@ class AnalysisConfig(BaseModel):
     comparison_mode: Literal["within_run", "cross_run"] = "within_run"
     feature_extractor: Literal["pooled_descriptor_v1"] = "pooled_descriptor_v1"
     representative_selection: Literal["centroid_nearest"] = "centroid_nearest"
+    representative_set_size: int = Field(default=9, gt=0, le=25)
     generate_composite: bool = False
     composite_size: int = Field(default=256, gt=31, le=1024)
 

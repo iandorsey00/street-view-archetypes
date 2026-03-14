@@ -39,6 +39,8 @@ def _summarize_category(
         "reference_count": len(records),
         "strata_counts": _count_values(records, "stratum"),
         "representative_image_path": None,
+        "representative_image_set": [],
+        "representative_contact_sheet_path": None,
         "feature_centroid": None,
         "feature_dimension": None,
         "within_category_dispersion": None,
@@ -57,17 +59,34 @@ def _summarize_category(
     if feature_rows:
         matrix = np.array(feature_rows)
         centroid = matrix.mean(axis=0)
+        distances = np.linalg.norm(matrix - centroid, axis=1)
         summary["feature_centroid"] = centroid.round(4).tolist()
         summary["feature_dimension"] = int(matrix.shape[1])
         summary["within_category_dispersion"] = round(
-            float(np.mean(np.linalg.norm(matrix - centroid, axis=1))),
+            float(np.mean(distances)),
             5,
         )
-        representative = min(
-            feature_records,
-            key=lambda pair: float(np.linalg.norm(pair[1] - centroid)),
-        )[0]
+        ranked_records = sorted(
+            (
+                {
+                    "image_path": pair[0].get("image_path"),
+                    "sample_id": pair[0].get("sample_id"),
+                    "heading": pair[0].get("heading"),
+                    "distance_to_centroid": round(float(distance), 6),
+                }
+                for pair, distance in zip(feature_records, distances)
+            ),
+            key=lambda row: row["distance_to_centroid"],
+        )
+        summary["representative_image_set"] = ranked_records[: analysis_config.representative_set_size]
+        representative = ranked_records[0]
         summary["representative_image_path"] = representative.get("image_path")
+        contact_sheet_path = _write_contact_sheet(
+            category=category,
+            representative_set=summary["representative_image_set"],
+            output_dir=output_dir,
+        )
+        summary["representative_contact_sheet_path"] = str(contact_sheet_path) if contact_sheet_path else None
         if analysis_config.generate_composite:
             composite_path = _write_composite_image(
                 category=category,
@@ -146,6 +165,41 @@ def _write_composite_image(
     composite_path = composite_dir / f"{category}_composite.png"
     Image.fromarray(composite_array).save(composite_path)
     return composite_path
+
+
+def _write_contact_sheet(
+    category: str,
+    representative_set: list[dict],
+    output_dir: Path,
+    cell_size: int = 220,
+    padding: int = 12,
+) -> Path | None:
+    image_paths = [Path(row["image_path"]) for row in representative_set if row.get("image_path")]
+    image_paths = [path for path in image_paths if path.exists()]
+    if not image_paths:
+        return None
+
+    count = len(image_paths)
+    columns = min(3, count)
+    rows = int(np.ceil(count / columns))
+    width = columns * cell_size + (columns + 1) * padding
+    height = rows * cell_size + (rows + 1) * padding
+
+    canvas = Image.new("RGB", (width, height), color=(245, 240, 232))
+    for index, path in enumerate(image_paths):
+        image = Image.open(path).convert("RGB")
+        image.thumbnail((cell_size, cell_size))
+        row = index // columns
+        col = index % columns
+        x = padding + col * (cell_size + padding) + (cell_size - image.width) // 2
+        y = padding + row * (cell_size + padding) + (cell_size - image.height) // 2
+        canvas.paste(image, (x, y))
+
+    archetype_dir = output_dir / "archetypes"
+    archetype_dir.mkdir(parents=True, exist_ok=True)
+    contact_sheet_path = archetype_dir / f"{category}_representative_set.png"
+    canvas.save(contact_sheet_path)
+    return contact_sheet_path
 
 
 def _pool_channels(array: np.ndarray, bins: int) -> np.ndarray:
