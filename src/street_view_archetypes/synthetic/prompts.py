@@ -385,10 +385,10 @@ def _category_prompt_blocks(category_name: str, config: PipelineConfig) -> tuple
         "\n".join(
             [
                 "- Preserve recurring house massing, roof form, facade material, garage prominence, setback depth, planting style, and street relationship from the references.",
-                "- Let neighboring homes, driveways, and front-yard landscaping appear when they help the scene read as a typical residential streetscape.",
-                "- Use a consistent comparison-oriented street-facing viewpoint: eye level from the public street, with the primary house seen from a frontal or only slightly oblique angle.",
-                "- Keep curb, driveway or front yard, facade, and roofline all legible in one frame so different housing archetypes are easier to compare across runs.",
-                "- Keep the framing street-level and ordinary, like a real Street View capture rather than a polished architectural hero shot.",
+                "- Make one housing unit the dominant subject of the frame, with neighboring homes only as secondary edge context.",
+                "- Use a consistent comparison-oriented street-facing viewpoint: eye level from the public street, aimed toward the front of the primary house from a near-frontal or only slightly oblique angle.",
+                "- Keep curb, driveway or front yard, facade, garage/front entry, and roofline all legible in one frame so different housing archetypes are easier to compare across runs.",
+                "- Keep the framing street-level and ordinary, like a real Street View capture rather than a polished architectural hero shot, but still centered enough that the primary house reads as the clear subject.",
                 "- Reflect the central tendency of the reference set instead of any one standout home.",
             ]
         ),
@@ -398,6 +398,8 @@ def _category_prompt_blocks(category_name: str, config: PipelineConfig) -> tuple
                 "- Do not invent major architectural styles, materials, or lot conditions absent from most references.",
                 "- Avoid extreme symmetry, hyper-saturated landscaping, implausibly pristine facades, or dramatic sky styling.",
                 "- Do not use a highly angled, cropped, aerial, or driveway-close viewpoint that makes cross-place comparison harder.",
+                "- Do not make the street itself, a cul-de-sac sweep, or a broad neighborhood panorama the main subject of the image.",
+                "- Do not let multiple houses compete equally for attention; avoid compositions where no single house reads as the primary comparison object.",
             ]
         ),
     )
