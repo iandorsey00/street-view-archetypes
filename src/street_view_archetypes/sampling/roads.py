@@ -136,6 +136,11 @@ def _collect_intersection_nodes(lines: gpd.GeoDataFrame) -> list[Point]:
 
 
 def _line_endpoints(geometry: LineString) -> list[Point]:
+    if geometry.geom_type == "MultiLineString":
+        points: list[Point] = []
+        for part in geometry.geoms:
+            points.extend(_line_endpoints(part))
+        return points
     coordinates = list(geometry.coords)
     if len(coordinates) < 2:
         return []
