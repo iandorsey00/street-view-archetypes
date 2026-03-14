@@ -179,6 +179,7 @@ At the moment, this automated path is designed for U.S. `city` and `county` boun
 
 2. If you prefer, create an uncommitted config manually in `configs/local/`.
    Start from [configs/templates/local-run.template.yaml](/Users/iandorsey/dev/street-view-archetypes/configs/templates/local-run.template.yaml).
+   For arterial midblock studies based on a roadway line layer, start from [configs/templates/local-arterial-midblock.template.yaml](/Users/iandorsey/dev/street-view-archetypes/configs/templates/local-arterial-midblock.template.yaml).
 3. Generate a review manifest:
 
 ```bash
@@ -265,22 +266,31 @@ For corridor studies, you can now constrain Street View camera direction in the 
 - `heading_mode: "custom"` uses an explicit `heading_values` list such as `[90, 270]`
 - `heading_mode: "road_parallel_both"` and `road_parallel_single` are reserved for future samplers that attach a local road bearing to each sampled record
 
+The sampler also supports a road-network mode for corridor studies:
+
+- `method: "road_network"` samples along a user-supplied line layer rather than from a generic polygon grid
+- `network_path` points to a local roadway GeoJSON or other vector line file
+- `intersection_buffer_meters` excludes points near detected line endpoints and intersection nodes, which helps isolate midblock through-segment views
+- `clip_to_boundary: true` clips the roadway layer to the study boundary before sampling
+
 For arterial midblock or through-segment studies, the recommended neutral pattern is:
 
 - separate midblock through-segment runs from intersection-heavy runs
-- use `heading_mode: "custom"` to keep views aligned with the roadway rather than perpendicular to it
+- use `heading_mode: "road_parallel_both"` when your road sampler provides roadway bearings, or `heading_mode: "custom"` when you need a manual stopgap
 - combine heading constraints with review decisions that exclude signalized intersections and approach geometry when your target is the through-running arterial form
 
 Example:
 
 ```yaml
 sampling:
-  method: "grid"
-  spacing_meters: 300
+  method: "road_network"
+  network_path: "../../data/local/networks/study_area_arterials.geojson"
+  spacing_meters: 120
   min_points: 40
   max_points: 160
-  heading_mode: "custom"
-  heading_values: [90, 270]
+  intersection_buffer_meters: 90
+  clip_to_boundary: true
+  heading_mode: "road_parallel_both"
   stratify_by: "quadrant"
 ```
 

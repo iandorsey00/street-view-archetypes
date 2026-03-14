@@ -1,0 +1,49 @@
+run:
+  name: "study-area-arterial-midblock-run"
+  output_dir: "../../outputs/study-area-arterial-midblock-run"
+
+boundary:
+  boundary_type: "city"
+  source: "file"
+  path: "../../data/local/boundaries/study_area_boundary.geojson"
+  boundary_id: "study-area-id"
+  boundary_name: "Study Area"
+
+sampling:
+  method: "road_network"
+  network_path: "../../data/local/networks/study_area_arterials.geojson"
+  spacing_meters: 120
+  min_points: 40
+  max_points: 160
+  intersection_buffer_meters: 90
+  clip_to_boundary: true
+  heading_mode: "road_parallel_both"
+  stratify_by: "quadrant"
+
+imagery:
+  provider: "google_street_view"
+  mode: "local_images"
+  local_manifest_path: "../../data/local/manifests/study-area-arterial-midblock-reviewed.csv"
+  image_width: 640
+  image_height: 640
+  field_of_view: 90
+  pitch: 0
+
+classification:
+  categories_config: "../categories.yaml"
+  target_categories:
+    - "arterial_roadways"
+
+analysis:
+  summary_method: "feature_centroid"
+  comparison_mode: "within_run"
+  feature_extractor: "pooled_descriptor_v1"
+  representative_selection: "centroid_nearest"
+  representative_set_size: 9
+  generate_composite: true
+  composite_size: 256
+
+reporting:
+  write_markdown: true
+  write_json: true
+  write_csv: true

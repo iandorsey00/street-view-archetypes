@@ -10,12 +10,16 @@ from street_view_archetypes.imagery.google_street_view import (
 from street_view_archetypes.models import RunArtifacts
 from street_view_archetypes.reporting.writer import write_outputs
 from street_view_archetypes.sampling.grid import expand_headings, sample_points
+from street_view_archetypes.sampling.roads import sample_road_points
 from street_view_archetypes.summarization.archetypes import summarize_categories
 
 
 def build_manifest(config: PipelineConfig) -> list[dict]:
     boundary_gdf = load_boundary(config.boundary)
-    sampled_points = sample_points(boundary_gdf, config.sampling)
+    if config.sampling.method == "road_network":
+        sampled_points = sample_road_points(boundary_gdf, config.sampling)
+    else:
+        sampled_points = sample_points(boundary_gdf, config.sampling)
     sample_records = expand_headings(sampled_points, config.sampling)
     return build_reference_manifest(sample_records, config.imagery)
 

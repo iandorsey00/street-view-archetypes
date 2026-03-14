@@ -45,9 +45,7 @@ def sample_points(boundary_gdf: gpd.GeoDataFrame, sampling_config: SamplingConfi
 
     samples = gpd.GeoDataFrame({"geometry": points}, crs=3857).to_crs(4326)
     samples["sample_id"] = [f"pt-{index:04d}" for index in range(1, len(samples) + 1)]
-    centroid = samples.unary_union.centroid
-    samples["stratum"] = samples.geometry.apply(lambda geom: _quadrant_label(geom.x, geom.y, centroid.x, centroid.y))
-    return samples
+    return assign_strata(samples, sampling_config.stratify_by)
 
 
 def expand_headings(samples: gpd.GeoDataFrame, sampling_config: SamplingConfig) -> list[dict[str, object]]:
@@ -102,6 +100,15 @@ def _normalize_heading_values(values: list[int]) -> list[int]:
     if not normalized:
         raise ValueError("At least one heading value is required.")
     return normalized
+
+
+def assign_strata(samples: gpd.GeoDataFrame, stratify_by: str) -> gpd.GeoDataFrame:
+    if stratify_by == "none":
+        samples["stratum"] = "all"
+        return samples
+    centroid = samples.unary_union.centroid
+    samples["stratum"] = samples.geometry.apply(lambda geom: _quadrant_label(geom.x, geom.y, centroid.x, centroid.y))
+    return samples
 
 
 def _quadrant_label(x: float, y: float, centroid_x: float, centroid_y: float) -> str:

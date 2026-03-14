@@ -22,13 +22,16 @@ class BoundaryConfig(BaseModel):
 
 
 class SamplingConfig(BaseModel):
-    method: Literal["grid"] = "grid"
+    method: Literal["grid", "road_network"] = "grid"
     spacing_meters: int = Field(default=500, gt=0)
     min_points: int = Field(default=25, gt=0)
     max_points: int = Field(default=100, gt=0)
     heading_mode: Literal["cardinal", "single", "custom", "road_parallel_both", "road_parallel_single"] = "cardinal"
     heading_values: list[int] | None = None
     heading_bearing_field: str = "sample_bearing"
+    network_path: Path | None = None
+    intersection_buffer_meters: int = Field(default=0, ge=0)
+    clip_to_boundary: bool = True
     stratify_by: Literal["quadrant", "none"] = "quadrant"
 
 
@@ -92,6 +95,8 @@ def load_pipeline_config(path: str | Path) -> PipelineConfig:
         config.imagery.local_manifest_path = _resolve_relative_path(
             config_path, config.imagery.local_manifest_path
         )
+    if config.sampling.network_path is not None:
+        config.sampling.network_path = _resolve_relative_path(config_path, config.sampling.network_path)
     return config
 
 
