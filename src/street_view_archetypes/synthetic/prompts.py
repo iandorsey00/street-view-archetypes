@@ -99,7 +99,7 @@ def build_prompt_payload(
 
     reference_images = category_summary.get("representative_image_set", [])
     primary_reference = category_summary.get("representative_image_path")
-    visual_priorities, negative_instructions = _category_prompt_blocks(category_name)
+    visual_priorities, negative_instructions = _category_prompt_blocks(category_name, config)
 
     prompt = f"""Create a single synthetic but plausible street-level archetype image for the category \"{category_label}\" using the attached reference images as the empirical basis.
 
@@ -320,8 +320,12 @@ def build_chatgpt_bundle(
     }
 
 
-def _category_prompt_blocks(category_name: str) -> tuple[str, str]:
+def _category_prompt_blocks(category_name: str, config: PipelineConfig) -> tuple[str, str]:
     if category_name == "arterial_roadways":
+        is_midblock_run = (
+            config.sampling.method == "road_network"
+            and config.sampling.intersection_buffer_meters > 0
+        )
         return (
             "\n".join(
                 [
@@ -332,6 +336,14 @@ def _category_prompt_blocks(category_name: str) -> tuple[str, str]:
                     "- If an intersection is visible, make signal heads, mast arms, stop bars, turn pockets, crosswalks, and lane alignments physically consistent with one another.",
                     "- Keep medians internally coherent: width should taper plausibly, planting should fit the available space, and curb lines should follow believable roadway geometry.",
                     "- Favor ordinary arterial-road engineering over stylized boulevard design; infrastructure should look functional, standardized, and regionally typical.",
+                    *(
+                        [
+                            "- Treat this run as a midblock through-segment arterial study: the image should primarily depict a through-running corridor segment rather than a signalized intersection or approach.",
+                            "- Prioritize long-view lane continuity, stable median form, corridor landscaping, and repeated through-lane geometry over nodes, stop bars, or signal hardware.",
+                        ]
+                        if is_midblock_run
+                        else []
+                    ),
                 ]
             ),
             "\n".join(
@@ -341,6 +353,15 @@ def _category_prompt_blocks(category_name: str) -> tuple[str, str]:
                     "- Avoid fantasy cleanliness, exaggerated lane width, or idealized boulevard beautification not supported by the references.",
                     "- Do not invent nonsensical signal phasing, floating signal hardware, contradictory lane-control cues, or mast-arm layouts that could not function in a real intersection.",
                     "- Do not create decorative or fragmented medians that interrupt through-lane logic, pinch unrealistically, or conflict with turn-lane geometry.",
+                    *(
+                        [
+                            "- Do not make the scene primarily about an intersection, signalized crossing, stop bar, or turn-pocket transition unless those features are unavoidable in most references.",
+                            "- Avoid prominent traffic signals, overhead mast arms, crosswalk ladders, and intersection control hardware in the foreground of a midblock through-segment image.",
+                            "- Do not collapse multiple roadway contexts into one scene; do not mix a wide landscaped midblock median with an obviously intersection-style signal layout.",
+                        ]
+                        if is_midblock_run
+                        else []
+                    ),
                 ]
             ),
         )
