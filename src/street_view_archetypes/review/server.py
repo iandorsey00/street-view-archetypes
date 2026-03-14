@@ -285,6 +285,10 @@ INDEX_HTML = """
       background: #e9e2d4;
       color: var(--ink);
     }
+    button:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+    }
     .chips {
       display: flex;
       gap: 10px;
@@ -375,9 +379,7 @@ INDEX_HTML = """
         <textarea id="review-notes" placeholder="Optional review notes"></textarea>
         <div class="button-row">
           <button class="secondary" id="prev-button">Previous</button>
-          <button class="secondary" id="next-button">Next</button>
-          <button id="save-next-button">Save &amp; Next</button>
-          <button class="secondary" id="save-button">Save Only</button>
+          <button id="next-button">Next</button>
           <button class="secondary" id="next-unreviewed-button">Next Unreviewed</button>
         </div>
         <div class="status" id="status"></div>
@@ -432,6 +434,9 @@ INDEX_HTML = """
       document.getElementById('summary-total').textContent = `${state.summary.row_count} rows`;
       document.getElementById('summary-reviewed').textContent = `${state.summary.reviewed_row_count} reviewed`;
       document.getElementById('summary-remaining').textContent = `${state.summary.remaining_row_count} remaining`;
+      document.getElementById('prev-button').disabled = state.index === 0;
+      document.getElementById('next-button').disabled = state.index >= state.records.length - 1;
+      document.getElementById('next-unreviewed-button').disabled = nextUnreviewedIndex() === null;
 
       const chips = document.getElementById('category-chips');
       chips.innerHTML = '';
@@ -448,7 +453,7 @@ INDEX_HTML = """
       }
     }
 
-    async function saveCurrent(options = { advance: false }) {
+    async function saveCurrent() {
       try {
         const inputs = Array.from(document.querySelectorAll('#category-chips input:checked'));
         const reviewed_categories = inputs.map((input) => input.value);
@@ -466,33 +471,54 @@ INDEX_HTML = """
         state.records[state.index].review_notes = review_notes;
         state.records[state.index].review_status = 'reviewed';
         state.summary = payload.summary;
-        document.getElementById('status').textContent = options.advance ? 'Saved and moved to next record' : 'Saved';
+        document.getElementById('status').textContent = 'Saved';
         clearError();
-        if (options.advance && state.index < state.records.length - 1) {
-          state.index += 1;
-        }
-        render();
+        return true;
       } catch (error) {
         showError(error.message || String(error));
+        return false;
       }
     }
 
-    function step(delta) {
-      state.index = Math.max(0, Math.min(state.records.length - 1, state.index + delta));
-      document.getElementById('status').textContent = '';
+    async function step(delta) {
+      const nextIndex = Math.max(0, Math.min(state.records.length - 1, state.index + delta));
+      if (nextIndex === state.index) {
+        render();
+        return;
+      }
+      const saved = await saveCurrent();
+      if (!saved) {
+        return;
+      }
+      state.index = nextIndex;
+      document.getElementById('status').textContent = 'Saved and moved';
       render();
     }
 
-    function nextUnreviewed() {
+    function nextUnreviewedIndex() {
       for (let i = state.index + 1; i < state.records.length; i += 1) {
-        if (!(state.records[i].reviewed_categories || []).length) {
-          state.index = i;
-          clearError();
-          render();
-          return;
+        if ((state.records[i].review_status || 'unreviewed') !== 'reviewed') {
+          return i;
         }
       }
-      document.getElementById('status').textContent = 'No later unreviewed records';
+      return null;
+    }
+
+    async function nextUnreviewed() {
+      const targetIndex = nextUnreviewedIndex();
+      if (targetIndex === null) {
+        document.getElementById('status').textContent = 'No later unreviewed records';
+        render();
+        return;
+      }
+      const saved = await saveCurrent();
+      if (!saved) {
+        return;
+      }
+      state.index = targetIndex;
+      document.getElementById('status').textContent = 'Saved and moved to next unreviewed record';
+      clearError();
+      render();
     }
 
     function showError(message) {
@@ -505,8 +531,6 @@ INDEX_HTML = """
 
     document.getElementById('prev-button').addEventListener('click', () => step(-1));
     document.getElementById('next-button').addEventListener('click', () => step(1));
-    document.getElementById('save-button').addEventListener('click', () => saveCurrent({ advance: false }));
-    document.getElementById('save-next-button').addEventListener('click', () => saveCurrent({ advance: true }));
     document.getElementById('next-unreviewed-button').addEventListener('click', nextUnreviewed);
     loadManifest();
   </script>
