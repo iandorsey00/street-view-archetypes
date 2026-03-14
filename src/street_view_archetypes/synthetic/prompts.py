@@ -329,6 +329,9 @@ def _category_prompt_blocks(category_name: str) -> tuple[str, str]:
                     "- Keep roadway markings, curb geometry, signage scale, utility presence, and verge/landscaping treatment consistent with the majority of reference images.",
                     "- Let adjacent buildings and parcels serve as secondary context rather than the primary subject.",
                     "- Maintain realistic roadway depth and a plausible traffic-engineering visual language.",
+                    "- If an intersection is visible, make signal heads, mast arms, stop bars, turn pockets, crosswalks, and lane alignments physically consistent with one another.",
+                    "- Keep medians internally coherent: width should taper plausibly, planting should fit the available space, and curb lines should follow believable roadway geometry.",
+                    "- Favor ordinary arterial-road engineering over stylized boulevard design; infrastructure should look functional, standardized, and regionally typical.",
                 ]
             ),
             "\n".join(
@@ -336,6 +339,8 @@ def _category_prompt_blocks(category_name: str) -> tuple[str, str]:
                     "- Do not render the scene as a freeway, empty rural highway, or pedestrian-only boulevard unless that pattern is clearly dominant in the references.",
                     "- Do not exaggerate traffic volume, add dramatic vehicles, or center the image on a single landmark.",
                     "- Avoid fantasy cleanliness, exaggerated lane width, or idealized boulevard beautification not supported by the references.",
+                    "- Do not invent nonsensical signal phasing, floating signal hardware, contradictory lane-control cues, or mast-arm layouts that could not function in a real intersection.",
+                    "- Do not create decorative or fragmented medians that interrupt through-lane logic, pinch unrealistically, or conflict with turn-lane geometry.",
                 ]
             ),
         )
