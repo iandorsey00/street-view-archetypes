@@ -199,154 +199,345 @@ INDEX_HTML = """
   <title>Street View Archetypes Review</title>
   <style>
     :root {
-      --bg: #f4f0e8;
-      --panel: #fffaf2;
-      --ink: #1b1a17;
-      --muted: #6b665d;
+      --bg: #f3f5f7;
+      --panel: rgba(255, 255, 255, 0.92);
+      --panel-strong: #ffffff;
+      --ink: #101418;
+      --muted: #66707b;
+      --muted-soft: #8a939d;
+      --line: #dde3e8;
+      --line-strong: #c8d1d8;
       --accent: #0f766e;
-      --accent-soft: #d7efe9;
-      --line: #d8d0c1;
+      --accent-soft: #e5f4f1;
+      --accent-strong: #0b5d56;
+      --danger: #b42318;
+      --shadow: 0 18px 48px rgba(15, 23, 42, 0.08);
+      --radius-xl: 28px;
+      --radius-lg: 22px;
+      --radius-md: 16px;
+      --radius-sm: 12px;
     }
     body {
       margin: 0;
-      font-family: Georgia, "Iowan Old Style", serif;
+      font-family: "Avenir Next", "Helvetica Neue", Helvetica, Arial, sans-serif;
       color: var(--ink);
       background:
-        radial-gradient(circle at top left, #efe7d7 0, transparent 30%),
-        linear-gradient(180deg, #f8f4ec 0%, var(--bg) 100%);
+        radial-gradient(circle at top left, rgba(15, 118, 110, 0.08) 0, transparent 28%),
+        radial-gradient(circle at top right, rgba(15, 23, 42, 0.05) 0, transparent 26%),
+        linear-gradient(180deg, #fafbfc 0%, var(--bg) 100%);
     }
     .shell {
-      max-width: 1200px;
+      max-width: 1380px;
       margin: 0 auto;
-      padding: 24px;
+      padding: 28px;
       display: grid;
-      grid-template-columns: 1.3fr 0.9fr;
-      gap: 20px;
+      grid-template-columns: minmax(0, 1.45fr) minmax(360px, 0.95fr);
+      gap: 24px;
     }
     .panel {
-      background: rgba(255, 250, 242, 0.95);
+      background: var(--panel);
       border: 1px solid var(--line);
-      border-radius: 18px;
-      box-shadow: 0 18px 50px rgba(27, 26, 23, 0.08);
+      border-radius: var(--radius-xl);
+      box-shadow: var(--shadow);
       overflow: hidden;
+      backdrop-filter: blur(18px);
     }
     .image-wrap {
-      aspect-ratio: 1 / 1;
-      background: #e8e0d1;
+      aspect-ratio: 1.18 / 1;
+      background:
+        linear-gradient(180deg, rgba(236, 240, 243, 0.96) 0%, rgba(228, 233, 238, 0.96) 100%);
       display: grid;
       place-items: center;
+      border-bottom: 1px solid var(--line);
     }
     img {
       width: 100%;
       height: 100%;
-      object-fit: cover;
+      object-fit: contain;
+      background: #eef2f5;
     }
-    .meta, .controls {
-      padding: 18px 20px;
+    .meta {
+      padding: 22px 24px 24px;
+    }
+    .controls {
+      padding: 26px 24px 24px;
+      display: flex;
+      flex-direction: column;
+      min-height: 100%;
+      box-sizing: border-box;
     }
     .eyebrow {
       text-transform: uppercase;
-      letter-spacing: 0.08em;
-      font-size: 12px;
+      letter-spacing: 0.14em;
+      font-size: 11px;
+      font-weight: 700;
       color: var(--muted);
     }
     h1 {
-      margin: 6px 0 14px;
-      font-size: 28px;
+      margin: 10px 0 0;
+      font-size: 34px;
+      line-height: 1.05;
+      letter-spacing: -0.03em;
+      font-weight: 700;
+    }
+    .subhead {
+      margin-top: 10px;
+      font-size: 15px;
+      line-height: 1.55;
+      color: var(--muted);
     }
     .stats {
-      display: flex;
-      gap: 14px;
-      flex-wrap: wrap;
-      margin-bottom: 14px;
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+      margin-top: 18px;
     }
     .stat {
-      padding: 10px 12px;
-      border-radius: 12px;
-      background: #f2ece2;
+      padding: 14px 16px;
+      border-radius: var(--radius-md);
+      background: #f7f9fb;
+      border: 1px solid var(--line);
       font-size: 14px;
+      line-height: 1.35;
+      color: var(--muted);
+    }
+    .stat strong {
+      display: block;
+      margin-bottom: 4px;
+      font-size: 24px;
+      line-height: 1;
+      letter-spacing: -0.03em;
+      color: var(--ink);
+      font-weight: 700;
+    }
+    .meta-grid {
+      display: grid;
+      gap: 14px;
+      margin-top: 18px;
+    }
+    .meta-card {
+      padding: 14px 16px;
+      border-radius: var(--radius-md);
+      background: var(--panel-strong);
+      border: 1px solid var(--line);
+    }
+    .meta-card-title {
+      margin-bottom: 8px;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--muted-soft);
+    }
+    .meta-card-body {
+      font-size: 15px;
+      line-height: 1.5;
+      color: var(--ink);
+    }
+    .path {
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 12px;
+      line-height: 1.55;
+      color: var(--muted);
+      word-break: break-all;
     }
     .button-row {
       display: flex;
-      gap: 10px;
-      flex-wrap: wrap;
-      margin-top: 16px;
+      gap: 12px;
+      margin-top: 14px;
     }
     button {
-      border: 0;
+      border: 1px solid transparent;
       border-radius: 999px;
-      padding: 10px 14px;
-      background: var(--ink);
+      padding: 13px 18px;
+      min-height: 48px;
+      background: var(--accent);
       color: white;
       font: inherit;
+      font-size: 15px;
+      font-weight: 600;
+      letter-spacing: 0.01em;
       cursor: pointer;
+      transition: transform 120ms ease, background 120ms ease, border-color 120ms ease, opacity 120ms ease;
+    }
+    button:hover:not(:disabled) {
+      transform: translateY(-1px);
+      background: var(--accent-strong);
     }
     button.secondary {
-      background: #e9e2d4;
+      background: #ffffff;
+      border-color: var(--line-strong);
       color: var(--ink);
     }
+    button.secondary:hover:not(:disabled) {
+      background: #f7fafb;
+      border-color: var(--muted-soft);
+    }
     button:disabled {
-      opacity: 0.45;
+      opacity: 0.42;
       cursor: not-allowed;
+      transform: none;
     }
     .chips {
       display: flex;
       gap: 10px;
       flex-wrap: wrap;
-      margin: 14px 0;
+      margin: 0;
     }
     label.chip {
-      border: 1px solid var(--line);
+      border: 1px solid var(--line-strong);
       border-radius: 999px;
       padding: 10px 14px;
       display: flex;
       gap: 8px;
       align-items: center;
-      background: white;
+      background: #ffffff;
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--ink);
+      min-height: 44px;
+      box-sizing: border-box;
+    }
+    label.chip input {
+      accent-color: var(--accent);
+      inline-size: 18px;
+      block-size: 18px;
     }
     textarea {
       width: 100%;
-      min-height: 120px;
+      min-height: 150px;
       border: 1px solid var(--line);
-      border-radius: 12px;
-      padding: 12px;
+      border-radius: var(--radius-md);
+      padding: 14px 16px;
       font: inherit;
-      background: #fffdf8;
+      font-size: 15px;
+      line-height: 1.55;
+      background: #fbfcfd;
       box-sizing: border-box;
+      resize: vertical;
     }
-    .path {
-      font-family: ui-monospace, SFMono-Regular, monospace;
-      font-size: 12px;
-      color: var(--muted);
-      word-break: break-all;
-      margin-top: 12px;
+    textarea:focus {
+      outline: 2px solid rgba(15, 118, 110, 0.16);
+      border-color: rgba(15, 118, 110, 0.45);
     }
     .status {
-      margin-top: 12px;
+      margin-top: 16px;
       color: var(--accent);
-      min-height: 20px;
+      min-height: 22px;
+      font-size: 14px;
+      font-weight: 600;
     }
     .rubric {
-      margin: 16px 0 18px;
-      padding: 14px 16px;
-      border-radius: 14px;
-      background: var(--accent-soft);
-      border: 1px solid #b9ddd6;
+      margin: 22px 0 18px;
+      padding: 16px 18px;
+      border-radius: var(--radius-md);
+      background: linear-gradient(180deg, #f1faf8 0%, var(--accent-soft) 100%);
+      border: 1px solid #c7e5df;
       font-size: 14px;
-      line-height: 1.45;
+      line-height: 1.6;
     }
     .rubric strong {
       display: block;
-      margin-bottom: 6px;
+      margin-bottom: 8px;
+      font-size: 13px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
     }
     .error {
-      color: #b42318;
+      color: var(--danger);
       font-weight: 600;
-      margin-top: 12px;
+      margin-top: 16px;
       white-space: pre-wrap;
+      font-size: 14px;
+      line-height: 1.45;
+    }
+    .controls-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 16px;
+    }
+    .record-pill {
+      padding: 10px 12px;
+      border-radius: 999px;
+      background: #f4f7f9;
+      border: 1px solid var(--line);
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+    .section-label {
+      margin: 24px 0 10px;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--muted-soft);
+    }
+    .notes-wrap {
+      margin-top: 6px;
+    }
+    .action-card {
+      margin-top: 18px;
+      padding: 16px;
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--line);
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.98) 0%, rgba(246, 249, 251, 0.98) 100%);
+    }
+    .action-topline {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+    .action-hint {
+      font-size: 13px;
+      color: var(--muted);
+    }
+    .action-card .section-label {
+      margin: 0;
+    }
+    .action-cluster {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+    .status-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-top: 8px;
+    }
+    @media (max-width: 1080px) {
+      .shell {
+        grid-template-columns: 1fr;
+      }
+      .stats {
+        grid-template-columns: 1fr;
+      }
     }
     @media (max-width: 920px) {
-      .shell { grid-template-columns: 1fr; }
+      .shell {
+        padding: 16px;
+        gap: 16px;
+      }
+      h1 {
+        font-size: 28px;
+      }
+      .button-row {
+        flex-direction: column;
+      }
+      .action-topline,
+      .status-row {
+        flex-direction: column;
+        align-items: stretch;
+      }
+      button {
+        width: 100%;
+      }
     }
   </style>
 </head>
@@ -355,34 +546,61 @@ INDEX_HTML = """
     <section class="panel">
       <div class="image-wrap"><img id="review-image" alt="Review image"></div>
       <div class="meta">
-        <div class="eyebrow">Image Review</div>
+        <div class="eyebrow">Review Workspace</div>
         <h1 id="title">Loading…</h1>
+        <div class="subhead">Use the current rubric to decide whether this image belongs in the active category set.</div>
         <div class="stats">
-          <div class="stat" id="summary-total"></div>
-          <div class="stat" id="summary-reviewed"></div>
-          <div class="stat" id="summary-remaining"></div>
+          <div class="stat"><strong id="summary-total"></strong><span>Total rows</span></div>
+          <div class="stat"><strong id="summary-reviewed"></strong><span>Reviewed</span></div>
+          <div class="stat"><strong id="summary-remaining"></strong><span>Remaining</span></div>
         </div>
-        <div id="source-labels"></div>
-        <div class="path" id="image-path"></div>
+        <div class="meta-grid">
+          <div class="meta-card">
+            <div class="meta-card-title">Source Labels</div>
+            <div class="meta-card-body" id="source-labels"></div>
+          </div>
+          <div class="meta-card">
+            <div class="meta-card-title">Image Path</div>
+            <div class="meta-card-body path" id="image-path"></div>
+          </div>
+        </div>
       </div>
     </section>
 
     <aside class="panel">
       <div class="controls">
-        <div class="eyebrow">Labeling</div>
-        <h1 id="record-label">Record</h1>
+        <div class="controls-header">
+          <div>
+            <div class="eyebrow">Labeling</div>
+            <h1 id="record-label">Record</h1>
+          </div>
+          <div class="record-pill" id="record-pill">0 / 0</div>
+        </div>
         <div class="rubric">
           <strong>{{RUBRIC_TITLE}}</strong>
           {{RUBRIC_BODY}}
         </div>
-        <div class="chips" id="category-chips"></div>
-        <textarea id="review-notes" placeholder="Optional review notes"></textarea>
-        <div class="button-row">
-          <button class="secondary" id="prev-button">Previous</button>
-          <button id="next-button">Next</button>
-          <button class="secondary" id="next-unreviewed-button">Next Unreviewed</button>
+        <div class="notes-wrap">
+          <div class="section-label">Review Notes</div>
+          <textarea id="review-notes" placeholder="Optional review notes"></textarea>
         </div>
-        <div class="status" id="status"></div>
+        <div class="action-card">
+          <div class="action-topline">
+            <div class="section-label">Quick Label</div>
+            <div class="action-hint">Tag, then move on</div>
+          </div>
+          <div class="action-cluster">
+            <div class="chips" id="category-chips"></div>
+            <div class="button-row">
+              <button class="secondary" id="prev-button">Previous</button>
+              <button id="next-button">Next</button>
+              <button class="secondary" id="next-unreviewed-button">Next Unreviewed</button>
+            </div>
+          </div>
+          <div class="status-row">
+            <div class="status" id="status"></div>
+          </div>
+        </div>
         <div class="error" id="error"></div>
       </div>
     </aside>
@@ -424,6 +642,7 @@ INDEX_HTML = """
 
       document.getElementById('title').textContent = `${record.sample_id} • heading ${record.heading}`;
       document.getElementById('record-label').textContent = `Record ${state.index + 1} of ${state.records.length}`;
+      document.getElementById('record-pill').textContent = `${state.index + 1} / ${state.records.length}`;
       const image = document.getElementById('review-image');
       image.src = `/image?path=${encodeURIComponent(record.image_path || '')}`;
       image.onerror = () => showError(`Could not load image:\\n${record.image_path || '(blank path)'}`);
@@ -431,9 +650,9 @@ INDEX_HTML = """
       document.getElementById('image-path').textContent = record.image_path || 'No image path';
       document.getElementById('source-labels').textContent = `Source labels: ${record.source_labels || 'none'}`;
       document.getElementById('review-notes').value = record.review_notes || '';
-      document.getElementById('summary-total').textContent = `${state.summary.row_count} rows`;
-      document.getElementById('summary-reviewed').textContent = `${state.summary.reviewed_row_count} reviewed`;
-      document.getElementById('summary-remaining').textContent = `${state.summary.remaining_row_count} remaining`;
+      document.getElementById('summary-total').textContent = `${state.summary.row_count}`;
+      document.getElementById('summary-reviewed').textContent = `${state.summary.reviewed_row_count}`;
+      document.getElementById('summary-remaining').textContent = `${state.summary.remaining_row_count}`;
       document.getElementById('prev-button').disabled = state.index === 0;
       document.getElementById('next-button').disabled = state.index >= state.records.length - 1;
       document.getElementById('next-unreviewed-button').disabled = nextUnreviewedIndex() === null;
